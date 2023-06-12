@@ -41,7 +41,7 @@ with st.form (key = 'input_form'):
       lst.append([classType, team, bibsType, uniformNumber, option])
       df = pd.DataFrame(lst)
       df.columns = ['CLASS', 'TEAM', 'ビブスType', '背番号', '得点・アシスト']
-      st.dataframe(df)
+      st.dataframe(df,)
       #  st.write(lst)
      except:
       # エラーメッセージ
@@ -95,6 +95,7 @@ if check:
 st.write(markdown)
 submit_btn4 = st.button('集計')
 if submit_btn4:
+ st.balloons()
  lst2 = []
  lst3 = []
  lst1 = []
