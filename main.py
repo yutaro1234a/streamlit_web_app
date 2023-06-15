@@ -1,8 +1,21 @@
 import streamlit as st
 import pandas as pd
 import copy
+import time
 
-st.title('ランニングスコア')
+# button_cssは使用していない　st.markdown(button_css, unsafe_allow_html=True)
+button_css = f"""
+<style>
+  div.stButton > button:first-child  {{
+    font-weight  : bold                ;/* 文字：太字                   */
+    border       :  5px solid #f36     ;/* 枠線：ピンク色で5ピクセルの実線 */
+    border-radius: 10px 10px 10px 10px ;/* 枠線：半径10ピクセルの角丸     */
+    background   : #ddd                ;/* 背景色：薄いグレー            */
+  }}
+</style>
+"""
+
+st.title('ランニングスコア :basketball:')
 st.header('得点・アシスト集計画面')
 st.caption('得点・アシストなどを行った選手を登録して下さい。')
 
@@ -41,7 +54,7 @@ with st.form (key = 'input_form'):
       lst.append([classType, team, bibsType, uniformNumber, option])
       df = pd.DataFrame(lst)
       df.columns = ['CLASS', 'TEAM', 'ビブスType', '背番号', '得点・アシスト']
-      st.dataframe(df,)
+      st.dataframe(df)
       #  st.write(lst)
      except:
       # エラーメッセージ
@@ -94,8 +107,18 @@ if check:
  
 st.write(markdown)
 submit_btn4 = st.button('集計')
+
 if submit_btn4:
+ text = st.empty()
+ bar = st.progress(0)
+ for i in range(100):
+  text.text(f"集計中 {i + 1} / 100")  
+  bar.progress(i + 1)
+  time.sleep(0.01)
+ 
+ st.write(markdown)
  st.balloons()
+ 
  lst2 = []
  lst3 = []
  lst1 = []
@@ -136,79 +159,88 @@ if submit_btn4:
          lstF.append(item)
          
  teamPointList = []
+ classPointlist = []
  tmpPointList = []
  tmpPointList += lst1 + lst2 + lst3
  
  for item in tmpPointList:
      teamPointList.append([item[1], item[4]])
+     classPointlist.append([item[0], item[1], item[4]])
 
  markdown = """
- チームごとの得点の集計結果はこちら ↓
+ **:red[TEAM]**ごとの得点の集計結果はこちら 👇
  """
  df = pd.DataFrame(teamPointList, columns=['TEAM', '合計得点'])
  st.write(markdown)
- st.write(df.groupby(['TEAM']).sum())
+ st.write(df.groupby(['TEAM']).sum())  
 
+ markdown = """
+  **:red[CLASS]**ごとの得点の集計結果はこちら 👇
+ """
+ df = pd.DataFrame(classPointlist, columns=['CLASS', 'TEAM', '合計得点'])
+ st.write(markdown)
+ st.write(df.groupby(['CLASS', 'TEAM']).sum())
+ 
  sumlist += lst1 + lst2 + lst3
  df = pd.DataFrame(sumlist, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
  markdown = """
- すべての得点の集計結果はこちら ↓
+ **:red[すべて]**の得点の集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
           
  df = pd.DataFrame(lst2, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
  markdown = """
- ツーポイントのみの集計結果はこちら ↓
+ **:orange[ツーポイント]**のみの集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lst3, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
  markdown = """
- スリーポイントのみの集計結果はこちら ↓
+ **:orange[スリーポイント]**のみの集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lst1, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
  markdown = """
- フリースローのみの集計結果はこちら ↓
+ **:orange[フリースロー]**のみの集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstA, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
  markdown = """
- アシストの集計結果はこちら ↓
+ **:violet[アシスト]**の集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstB, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
  markdown = """
- ブロックの集計結果はこちら ↓
+ **:violet[ブロック]**の集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstR, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
  markdown = """
- リバウンドの集計結果はこちら ↓
+ **:violet[リバウンド]**の集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstS, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
  markdown = """
- スティールの集計結果はこちら ↓
+ **:violet[スティール]**の集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstF, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
  markdown = """
-ファールの集計結果はこちら ↓
+ **:violet[ファール]**の集計結果はこちら 👇
  """
  st.write(markdown)
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
