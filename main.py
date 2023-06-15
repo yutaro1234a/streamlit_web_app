@@ -109,13 +109,15 @@ st.write(markdown)
 submit_btn4 = st.button('集計')
 
 if submit_btn4:
+
  text = st.empty()
  bar = st.progress(0)
  for i in range(100):
-  text.text(f"集計中 {i + 1} / 100")  
+  text.text(f" 集計中 { i + 1 } / 100 % ")
   bar.progress(i + 1)
   time.sleep(0.01)
- 
+  
+ text.text('completed!')
  st.write(markdown)
  st.balloons()
  
@@ -167,81 +169,51 @@ if submit_btn4:
      teamPointList.append([item[1], item[4]])
      classPointlist.append([item[0], item[1], item[4]])
 
- markdown = """
- **:red[TEAM]**ごとの得点の集計結果はこちら 👇
- """
- df = pd.DataFrame(teamPointList, columns=['TEAM', '合計得点'])
+ st.write('# 集計結果！📉 ')
  st.write(markdown)
+ 
+ df = pd.DataFrame(teamPointList, columns=['TEAM', '合計得点'])
+ st.write('【 :red[TEAM] 】ごとの得点の集計結果はこちら 👇')
  st.write(df.groupby(['TEAM']).sum())  
 
- markdown = """
-  **:red[CLASS]**ごとの得点の集計結果はこちら 👇
- """
  df = pd.DataFrame(classPointlist, columns=['CLASS', 'TEAM', '合計得点'])
- st.write(markdown)
+ st.write('【 :red[CLASS] 】ごとの得点の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM']).sum())
  
  sumlist += lst1 + lst2 + lst3
  df = pd.DataFrame(sumlist, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
- markdown = """
- **:red[すべて]**の得点の集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :red[すべて] 】の得点の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
           
  df = pd.DataFrame(lst2, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
- markdown = """
- **:orange[ツーポイント]**のみの集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :orange[ツーポイント] 】のみの集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lst3, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
- markdown = """
- **:orange[スリーポイント]**のみの集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :orange[スリーポイント] 】のみの集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lst1, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
- markdown = """
- **:orange[フリースロー]**のみの集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :orange[フリースロー] 】のみの集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstA, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
- markdown = """
- **:violet[アシスト]**の集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :violet[アシスト] 】の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstB, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
- markdown = """
- **:violet[ブロック]**の集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :violet[ブロック] 】の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstR, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
- markdown = """
- **:violet[リバウンド]**の集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :violet[リバウンド] 】の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstS, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
- markdown = """
- **:violet[スティール]**の集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :violet[スティール] 】の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lstF, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計回数'])
- markdown = """
- **:violet[ファール]**の集計結果はこちら 👇
- """
- st.write(markdown)
+ st.write('【 :violet[ファール] 】の集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
