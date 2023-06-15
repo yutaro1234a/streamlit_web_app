@@ -22,6 +22,15 @@ st.caption('得点・アシストなどを行った選手を登録して下さ�
 markdown = """
 \n
 """
+bibsType_help_txt = '''
+        ビブスType詳細については、下記を参照して下さい。
+        
+        | ビブス | 説明 | 
+        |:-----|:-----|
+        |ドバスOriginal | 色は赤と青。赤色ビブスには【DOBASU】と青色ビブスには【Thunder】と記載されている。|
+        | SPALDING | 色はネイビーとピンク。胸の当たりにSPALDINGのロゴがあります。| 
+        | 無地 | 色は水色とオレンジ。 無地です|    
+        '''
 
 @st.cache_resource
 def cache_lst():
@@ -34,7 +43,7 @@ with st.form (key = 'input_form'):
  st.write(markdown)
  team = st.radio('TEAM', ('Red', 'Blue'), horizontal=True)
  st.write(markdown)
- bibsType = st.radio('ビブスType', ('ドバスOriginal', 'SPALDING', '無地'), horizontal=True)
+ bibsType = st.radio('ビブスType', ('ドバスOriginal', 'SPALDING', '無地'), horizontal=True, help = bibsType_help_txt)
  st.write(markdown)
  uniformNumber = st.selectbox('背番号', ('00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '21', '31', '32', '35'))
  st.write(markdown)
@@ -190,7 +199,7 @@ if submit_btn4:
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lst3, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
- st.write('【 :orange[スリーポイント] 】のみの集計結果はこちら 👇')
+ st.write('【:orange[スリーポイント]】のみの集計結果はこちら 👇')
  st.write(df.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号']).sum())
 
  df = pd.DataFrame(lst1, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '合計得点'])
