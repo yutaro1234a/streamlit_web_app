@@ -45,7 +45,7 @@ with st.form (key = 'input_form'):
  st.write(markdown)
  bibsType = st.radio('ビブスType', ('ドバスOriginal', 'SPALDING', '無地'), horizontal=True, help = bibsType_help_txt)
  st.write(markdown)
- uniformNumber = st.selectbox('背番号', ('00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '21', '31', '32', '35'))
+ uniformNumber = st.selectbox('背番号', ('00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '21', '31', '32', '35', '--'))
  st.write(markdown)
  option = st.selectbox('得点・アシスト', ('ツーポイント', 'スリーポイント', 'フリースロー', 'アシスト', 'ブロック', 'リバウンド', 'スティール', 'ファール'))
  st.write(markdown)
