@@ -23,6 +23,19 @@ from lib_db import (
 inject_css()
 inject_mobile_big_ui()
 
+# ✅ どのバージョンでも動く「安全リロード」
+def safe_rerun():
+    try:
+        st.rerun()  # 新しめ（正式API）
+    except Exception:
+        try:
+            st.experimental_rerun()  # 古め（experimental）
+        except Exception:
+            try:
+                st.toast("🔄 画面を更新してください（ブラウザの再読み込み）", icon="🔄")
+            except Exception:
+                st.warning("🔄 画面を更新してください（Ctrl/Cmd + R）")
+
 # ↓↓↓ ここから本体処理 ↓↓↓
 conn = get_conn()
 players_df = load_players()
@@ -32,7 +45,7 @@ st.session_state.setdefault("last_insert_id", None)
 st.session_state.setdefault("last_action_ts", 0)
 
 # タイトル & 固定バー
-st.title("🏀 ランニングスコア（入力＆ログ）")
+st.title("🏀 ランニングスコア（入力）")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">
@@ -47,9 +60,9 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 入力UI
+quarter   = st.selectbox('⏱️ クォーター', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
 classType = st.radio('🏫 CLASS', ('初級','中級','上級'), horizontal=True, key="class_radio")
 team      = st.radio('🟥 TEAM',  ('Red','Blue'), horizontal=True, key="team_radio")
-quarter   = st.selectbox('⏱️ クォーター', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
 
 filtered = players_df[(players_df['CLASS']==classType) & (players_df['TEAM']==team)].copy()
 if not filtered.empty:
@@ -84,7 +97,7 @@ tab = st.radio(
     horizontal=True,
     index=TAB_OPTIONS.index(active_tab_default) if active_tab_default in TAB_OPTIONS else 0,
     key="active_tab_radio",
-    label_visibility="collapsed",  # 見出しを隠してスッキリ
+    label_visibility="collapsed",
 )
 # 選択を保持
 st.session_state["active_tab"] = tab
@@ -93,14 +106,14 @@ st.session_state["active_tab"] = tab
 # タブごとの中身（条件分岐で描画）
 # ─────────────────────────────────────────
 if tab == "🧮 得点":
-    st.caption("タップで即登録（2pt / 3pt / 1pt）")
+    st.caption("タップで登録")
     c1, c2, c3 = st.columns(3)
-    with c1:  st.button("🏀 3pt", on_click=add_event, args=("3pt",))
-    with c2:  st.button("🏀 2pt", on_click=add_event, args=("2pt",))
+    with c1:  st.button("🏀 2pt", on_click=add_event, args=("2pt",))
+    with c2:  st.button("🏀 3pt", on_click=add_event, args=("3pt",))
     with c3:  st.button("🏀 1pt", on_click=add_event, args=("1pt",))
 
 elif tab == "📈 スタッツ":
-    st.caption("タップで即登録（アシスト / ブロック / リバウンド / スティール）")
+    st.caption("タップで登録")
     r1c1, r1c2 = st.columns(2); r2c1, r2c2 = st.columns(2)
     with r1c1: st.button("🅰️ アシスト", on_click=add_event, args=("アシスト",))
     with r1c2: st.button("🧱 ブロック",   on_click=add_event, args=("ブロック",))
@@ -108,7 +121,7 @@ elif tab == "📈 スタッツ":
     with r2c2: st.button("🕵️ スティール", on_click=add_event, args=("スティール",))
 
 elif tab == "🚨 反則":
-    st.caption("タップで即登録（ファール / ターンオーバー）")
+    st.caption("タップで登録")
     f1, f2 = st.columns(2)
     with f1: st.button("🚨 ファール", on_click=add_event, args=("ファール",))
     with f2: st.button("♻️ ターンオーバー", on_click=add_event, args=("ターンオーバー",))
@@ -152,7 +165,7 @@ if not df_show.empty:
                     if ids:
                         delete_events_by_ids(conn, ids)
                         st.success(f"{len(ids)} 件を削除しました。")
-                        st.experimental_rerun()
+                        safe_rerun()  # ← 置き換え
                     else:
                         st.warning("削除対象が選ばれていません。")
             with colD2:
@@ -165,7 +178,7 @@ if not df_show.empty:
                     if ids:
                         delete_events_by_ids(conn, ids)
                         st.success(f"id={ids} を削除しました。")
-                        st.experimental_rerun()
+                        safe_rerun()  # ← 置き換え
                     else:
                         st.warning("id の指定が正しくありません。半角数字をカンマで区切って入力してください。")
         else:
@@ -176,7 +189,7 @@ if not df_show.empty:
                     if del_ids:
                         delete_events_by_ids(conn, del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
-                        st.experimental_rerun()
+                        safe_rerun()  # ← 置き換え
                     else:
                         st.warning("削除対象が選ばれていません。")
             with colD2:
@@ -189,7 +202,7 @@ if not df_show.empty:
                     if ids:
                         delete_events_by_ids(conn, ids)
                         st.success(f"id={ids} を削除しました。")
-                        st.experimental_rerun()
+                        safe_rerun()  # ← 置き換え
                     else:
                         st.warning("id の指定が正しくありません。")
 
@@ -202,7 +215,7 @@ if not df_show.empty:
                 delete_event_by_id(conn, st.session_state.last_insert_id)
                 st.success("直前の1件を取り消しました。")
                 st.session_state.last_insert_id = None
-                st.experimental_rerun()
+                safe_rerun()  # ← 置き換え
             else:
                 st.warning("この端末で直近に登録した1件がありません。")
 
@@ -232,7 +245,7 @@ if not df_show.empty:
                     wipe_all_data(conn)
                     st.session_state.last_insert_id = None
                     st.success("全データを削除しました。")
-                    st.experimental_rerun()
+                    safe_rerun()  # ← 置き換え
                 else:
                     st.error("確認文字が一致しません。'DELETE' と入力してください。")
 

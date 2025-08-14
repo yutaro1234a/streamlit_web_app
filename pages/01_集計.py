@@ -44,7 +44,27 @@ st.markdown(f"""
 
 df = read_df_sql(conn)
 if df.empty:
-    st.info("集計対象データがありません。"); st.stop()
+    st.info("集計対象データがありません。"); 
+    
+    # これに置き換え（変数名を明示的に）
+    col_left, col_mid, col_right = st.columns([1, 2, 1])
+    with col_left:
+        st.markdown("""
+        <style>
+        .btn-back {
+            display:block; width:100%;
+            text-align:center;
+            padding:14px 16px; border-radius:14px;
+            font-weight:700; font-size:18px;
+            background:#efefef; border:1px solid #ddd;
+            text-decoration:none !important; color:inherit;
+        }
+        .btn-back:active { transform: translateY(1px); }
+        </style>
+        <a class="btn-back" href="/" target="_self">⬅️ スコア画面へ戻る</a>
+        """, unsafe_allow_html=True)
+
+    st.stop()
 
 # 前処理
 score_df = df[df['得点・アシスト'].isin(POINT_MAP.keys())].copy()
