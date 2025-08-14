@@ -1,140 +1,320 @@
+# main.py
 import streamlit as st
+
+# ★ 最初に1回だけ
+st.set_page_config(
+    page_title="🏀 ランニングスコア（入力＆ログ）",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
+
 import pandas as pd
-import copy
 import time
-import os
+import streamlit.components.v1 as components
 
-PLAYER_CSV = 'players.csv'
-SCORE_CSV = 'score_log.csv'
+from lib_db import (
+    get_conn, inject_css, inject_mobile_big_ui, load_players, notify,
+    add_event_sql, delete_event_by_id, delete_events_by_ids,
+    read_df_sql, read_recent_df, export_events_csv, backup_sqlite,
+    wipe_all_data, get_score_red_blue, POINT_MAP, STAT_SET, FOUL_SET
+)
 
-st.title('🏀 ランニングスコア集計アプリ')
-st.header('✨ 得点・アシスト登録＆集計画面')
-st.caption('以下の選手情報とプレイ内容を入力してください')
+# ★ set_page_config の後で1回だけ呼ぶ
+inject_css()
+inject_mobile_big_ui()
 
-@st.cache_resource
-def cache_lst():
-    if os.path.exists(SCORE_CSV):
-        return pd.read_csv(SCORE_CSV).values.tolist()
-    return []
-lst = cache_lst()
-
-# プレイヤーリストの読み込み
-def load_players():
-    if os.path.exists(PLAYER_CSV):
-        df = pd.read_csv(PLAYER_CSV, dtype=str)
-        df['背番号'] = df['背番号'].astype(str)
-        df['表示'] = df['背番号'] + ' - ' + df['プレイヤー名'] + '（' + df['ビブスType'] + '）'
-        return df
-    return pd.DataFrame()
-
+# ↓↓↓ ここから本体処理 ↓↓↓
+conn = get_conn()
 players_df = load_players()
 
-# CLASSとTEAMの選択
-classType = st.radio('🏫 CLASS 選択', ('初級', '中級', '上級'), horizontal=True, key="class_radio")
-team = st.radio('🟥 TEAM 選択', ('Red', 'Blue'), horizontal=True, key="team_radio")
+# 状態
+st.session_state.setdefault("last_insert_id", None)
+st.session_state.setdefault("last_action_ts", 0)
 
-# フィルタリングされた選手の選択
-if not players_df.empty:
-    filtered_players = players_df[(players_df['CLASS'] == classType) & (players_df['TEAM'] == team)]
+# タイトル & 固定バー
+st.title("🏀 ランニングスコア（入力＆ログ）")
+red_pts, blue_pts = get_score_red_blue(conn)
+st.markdown(f"""
+<div class="scorebar">
+  <div class="scorebox">
+    <div class="info">📊 全データ合計スコア</div>
+    <div>
+      <span class="scorechip red">Red: {red_pts}</span>
+      <span class="scorechip blue">Blue: {blue_pts}</span>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-    if not filtered_players.empty:
-        display_options = filtered_players['表示'].tolist()
-        selected_player = st.selectbox(
-            '🙋‍♂️ 選手を選択（背番号 - 名前 - ビブス）', 
-            display_options,
-            key=f"player_select_dynamic"
-        )
-        selected_row = filtered_players[filtered_players['表示'] == selected_player].iloc[0]
-        uniformNumber = selected_row['背番号']
-        playerName = selected_row['プレイヤー名']
-        bibsType = selected_row['ビブスType']
-    else:
-        st.warning(f"選択されたCLASS（{classType}）とTEAM（{team}）の選手が登録されていません。")
-        uniformNumber = '--'
-        playerName = ''
+# 入力UI
+classType = st.radio('🏫 CLASS', ('初級','中級','上級'), horizontal=True, key="class_radio")
+team      = st.radio('🟥 TEAM',  ('Red','Blue'), horizontal=True, key="team_radio")
+quarter   = st.selectbox('⏱️ クォーター', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
+
+filtered = players_df[(players_df['CLASS']==classType) & (players_df['TEAM']==team)].copy()
+if not filtered.empty:
+    display_options = filtered['表示'].tolist()
+    selected_player = st.selectbox("🙋‍♂️ 選手（背番号 - 名前 - ビブス）", display_options, key="player_select")
+    row = filtered[filtered['表示']==selected_player].iloc[0]
+    uniformNumber = row['背番号']; playerName = row['プレイヤー名']; bibsType = row['ビブスType']
 else:
-    st.warning('選手が登録されていません。先に登録してください。')
-    uniformNumber = '--'
-    playerName = ''
+    st.warning(f"CLASS={classType} / TEAM={team} の選手がいません。")
+    uniformNumber = '--'; playerName = ''; bibsType = ''
 
-option = st.selectbox('🎯 プレイ内容', ('ツーポイント', 'スリーポイント', 'フリースロー', 'アシスト', 'ブロック', 'リバウンド', 'スティール', 'ファール'))
+def add_event(action_label: str):
+    now = time.time()
+    if now - st.session_state.last_action_ts < 0.35:  # 誤連打ガード
+        return
+    if uniformNumber == '--':
+        st.error('選手が未選択です。'); return
+    rid = add_event_sql(conn, classType, team, bibsType, uniformNumber, playerName, action_label, quarter)
+    st.session_state.last_insert_id = rid
+    st.session_state.last_action_ts = now
+    notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
-col1, col2, col3 = st.columns([2, 1, 1])
-with col1:
-    submit_btn = st.button('✅ 登録')
-with col2:
-    listAll_btn = st.button('📋 一覧表示')
-with col3:
-    DeleteLastRow_btn = st.button('❌ 最終行を削除')
+# ─────────────────────────────────────────
+# タブ状態をセッションに保持（擬似タブ：radioを横並びで）
+# ─────────────────────────────────────────
+TAB_OPTIONS = ["🧮 得点", "📈 スタッツ", "🚨 反則"]
+# 初期値は前回選択 or 先頭
+active_tab_default = st.session_state.get("active_tab", TAB_OPTIONS[0])
+tab = st.radio(
+    "表示タブ",
+    TAB_OPTIONS,
+    horizontal=True,
+    index=TAB_OPTIONS.index(active_tab_default) if active_tab_default in TAB_OPTIONS else 0,
+    key="active_tab_radio",
+    label_visibility="collapsed",  # 見出しを隠してスッキリ
+)
+# 選択を保持
+st.session_state["active_tab"] = tab
 
-if submit_btn:
-    try:
-        lst.append([classType, team, bibsType, uniformNumber, playerName, option])
-        df = pd.DataFrame(lst, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '名前', '得点・アシスト'])
-        df.to_csv(SCORE_CSV, index=False)
-        st.success('✅ データを登録しました')
-        st.dataframe(df)
-    except:
-        st.error('❌ データ登録時にエラーが発生しました。')
+# ─────────────────────────────────────────
+# タブごとの中身（条件分岐で描画）
+# ─────────────────────────────────────────
+if tab == "🧮 得点":
+    st.caption("タップで即登録（2pt / 3pt / 1pt）")
+    c1, c2, c3 = st.columns(3)
+    with c1:  st.button("🏀 3pt", on_click=add_event, args=("3pt",))
+    with c2:  st.button("🏀 2pt", on_click=add_event, args=("2pt",))
+    with c3:  st.button("🏀 1pt", on_click=add_event, args=("1pt",))
 
-if listAll_btn:
-    if lst:
-        df = pd.DataFrame(lst, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '名前', '得点・アシスト'])
-        st.dataframe(df)
-    else:
-        st.warning('📭 表示するデータがありません。データを登録して下さい')
+elif tab == "📈 スタッツ":
+    st.caption("タップで即登録（アシスト / ブロック / リバウンド / スティール）")
+    r1c1, r1c2 = st.columns(2); r2c1, r2c2 = st.columns(2)
+    with r1c1: st.button("🅰️ アシスト", on_click=add_event, args=("アシスト",))
+    with r1c2: st.button("🧱 ブロック",   on_click=add_event, args=("ブロック",))
+    with r2c1: st.button("🏗️ リバウンド", on_click=add_event, args=("リバウンド",))
+    with r2c2: st.button("🕵️ スティール", on_click=add_event, args=("スティール",))
 
-if DeleteLastRow_btn:
-    if lst:
-        lst.pop(-1)
-        df = pd.DataFrame(lst, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '名前', '得点・アシスト'])
-        df.to_csv(SCORE_CSV, index=False)
-        st.success('🗑️ 最終行を削除しました')
-        st.dataframe(df)
-    else:
-        st.warning('削除できるデータがありません。')
+elif tab == "🚨 反則":
+    st.caption("タップで即登録（ファール / ターンオーバー）")
+    f1, f2 = st.columns(2)
+    with f1: st.button("🚨 ファール", on_click=add_event, args=("ファール",))
+    with f2: st.button("♻️ ターンオーバー", on_click=add_event, args=("ターンオーバー",))
 
+# ─── ログ表示（最新N件 / 全件）＋ 管理ツール（Expanderに集約） ───
 st.markdown("---")
-submit_btn4 = st.button('📊 集計')
+st.subheader("📋 ログ表示")
+view_mode = st.radio("表示モード", ("最新N件", "全件"), horizontal=True, key="log_view_mode")
+if view_mode == "最新N件":
+    N = st.number_input("表示する件数（最新N件）", min_value=10, max_value=5000, value=10, step=10, key="log_top_n")
+    df_show = read_recent_df(conn, n=int(N))
+else:
+    df_show = read_df_sql(conn)
 
-if submit_btn4:
-    text = st.empty()
-    bar = st.progress(0)
-    for i in range(100):
-        text.text(f" 集計中 {i + 1} / 100 % ")
-        bar.progress(i + 1)
-        time.sleep(0.005)
+if not df_show.empty:
+    order = ['id','created_at','CLASS','TEAM','ビブスType','背番号','名前','得点・アシスト','クォーター']
+    order = [c for c in order if c in df_show.columns] + [c for c in df_show.columns if c not in order]
+    df_show = df_show[order].copy()
+    df_show['id'] = df_show['id'].astype(int)
 
-    text.text('✅ 集計完了!')
-    st.balloons()
+    # 表（編集可/不可）は従来どおり
+    supports_data_editor = hasattr(st, "data_editor")
 
-    strlist = copy.deepcopy(lst)
-    得点項目 = {'ツーポイント': 2, 'スリーポイント': 3, 'フリースロー': 1}
+    if supports_data_editor:
+        df_edit = df_show.copy()
+        df_edit['削除'] = False
+        edited = st.data_editor(df_edit, hide_index=True, use_container_width=True, height=480)
+    else:
+        st.dataframe(df_show, use_container_width=True, height=480)
 
-    得点データ = []
-    その他データ = []
+    # ★ 管理ツールをひとまとめの Expander に格納
+    with st.expander("🧰 管理ツール（削除・取り消し・エクスポート・バックアップ・全消去）", expanded=False):
 
-    for item in strlist:
-        record = item.copy()
-        action = record[5]
-        if action in 得点項目:
-            record[5] = 得点項目[action]
-            得点データ.append(record)
+        # ① 行削除（チェック／マルチセレクト／ID指定）
+        st.markdown("**🧹 行削除**")
+        if supports_data_editor:
+            colD1, colD2 = st.columns([1,2])
+            with colD1:
+                if st.button("🗑️ チェックした行を削除", type="primary", use_container_width=True):
+                    ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist()
+                    if ids:
+                        delete_events_by_ids(conn, ids)
+                        st.success(f"{len(ids)} 件を削除しました。")
+                        st.experimental_rerun()
+                    else:
+                        st.warning("削除対象が選ばれていません。")
+            with colD2:
+                id_text = st.text_input("id をカンマ区切りで指定（例: 101,102,120）", value="", key="id_delete_input")
+                if st.button("🧹 指定した id を削除", use_container_width=True):
+                    try:
+                        ids = [int(s.strip()) for s in id_text.split(",") if s.strip()]
+                    except ValueError:
+                        ids = []
+                    if ids:
+                        delete_events_by_ids(conn, ids)
+                        st.success(f"id={ids} を削除しました。")
+                        st.experimental_rerun()
+                    else:
+                        st.warning("id の指定が正しくありません。半角数字をカンマで区切って入力してください。")
         else:
-            その他データ.append(record[:5] + [1, action])
+            del_ids = st.multiselect("削除する id を選択", df_show['id'].tolist(), key="del_ids_multiselect")
+            colD1, colD2 = st.columns([1,2])
+            with colD1:
+                if st.button("🗑️ 選択した id を削除", type="primary", use_container_width=True):
+                    if del_ids:
+                        delete_events_by_ids(conn, del_ids)
+                        st.success(f"{len(del_ids)} 件を削除しました。")
+                        st.experimental_rerun()
+                    else:
+                        st.warning("削除対象が選ばれていません。")
+            with colD2:
+                id_text = st.text_input("id をカンマ区切りで指定（例: 101,102,120）", value="", key="id_delete_input_fb")
+                if st.button("🧹 指定した id を削除（互換）", use_container_width=True):
+                    try:
+                        ids = [int(s.strip()) for s in id_text.split(",") if s.strip()]
+                    except ValueError:
+                        ids = []
+                    if ids:
+                        delete_events_by_ids(conn, ids)
+                        st.success(f"id={ids} を削除しました。")
+                        st.experimental_rerun()
+                    else:
+                        st.warning("id の指定が正しくありません。")
 
-    df_score = pd.DataFrame(得点データ, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '名前', '得点'])
-    df_other = pd.DataFrame(その他データ, columns=['CLASS', 'TEAM', 'ビブスType', '背番号', '名前', '回数', '項目'])
+        st.markdown("---")
 
-    st.subheader('📌 TEAMごとの得点')
-    st.dataframe(df_score.groupby('TEAM')['得点'].sum().reset_index())
+        # ② 直前の登録を取り消す
+        st.markdown("**↩️ 直前取り消し**")
+        if st.button("↩️ 直前の登録を取り消す", use_container_width=True):
+            if st.session_state.last_insert_id:
+                delete_event_by_id(conn, st.session_state.last_insert_id)
+                st.success("直前の1件を取り消しました。")
+                st.session_state.last_insert_id = None
+                st.experimental_rerun()
+            else:
+                st.warning("この端末で直近に登録した1件がありません。")
 
-    st.subheader('📌 CLASS + TEAMごとの得点')
-    st.dataframe(df_score.groupby(['CLASS', 'TEAM'])['得点'].sum().reset_index())
+        st.markdown("---")
 
-    st.subheader('📌 選手ごとの得点')
-    st.dataframe(df_score.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号', '名前'])['得点'].sum().reset_index())
+        # ③ エクスポート & バックアップ
+        st.markdown("**💾 エクスポート & バックアップ**")
+        colE1, colE2 = st.columns(2)
+        with colE1:
+            fname, csv_bytes = export_events_csv(conn)
+            st.download_button("⬇️ CSVエクスポート（全データ）", data=csv_bytes, file_name=fname, mime="text/csv", use_container_width=True)
+        with colE2:
+            if st.button("🗂️ SQLiteバックアップ作成", use_container_width=True):
+                bak_name, bak_bytes = backup_sqlite(conn)
+                st.download_button("⬇️ バックアップをダウンロード", data=bak_bytes, file_name=bak_name, mime="application/octet-stream", use_container_width=True)
 
-    if not df_other.empty:
-        st.subheader('📌 選手ごとのその他プレイ回数')
-        st.dataframe(df_other.groupby(['CLASS', 'TEAM', 'ビブスType', '背番号', '名前', '項目'])['回数'].sum().reset_index())
+        st.markdown("---")
+
+        # ④ 全データ削除
+        st.markdown("**⚠️ データリセット（events 全削除）**")
+        colx, coly = st.columns([2,1])
+        with colx:
+            confirm = st.text_input("確認のため、DELETE と入力してください（全角不可）", value="")
+        with coly:
+            if st.button("🗑️ 全データ削除", type="primary", use_container_width=True):
+                if confirm.strip() == "DELETE":
+                    wipe_all_data(conn)
+                    st.session_state.last_insert_id = None
+                    st.success("全データを削除しました。")
+                    st.experimental_rerun()
+                else:
+                    st.error("確認文字が一致しません。'DELETE' と入力してください。")
+
+    st.caption(f"表示: {len(df_show)} 件（※削除後は自動更新）")
+else:
+    st.info("表示できるデータがありません。")
+
+# ─────────────────────────────────────────
+# 集計ページへ（再集計して遷移：全方位フォールバック）
+# ─────────────────────────────────────────
+def _streamlit_ver_ge(major, minor):
+    try:
+        v = tuple(map(int, st.__version__.split(".")[:2]))
+        return v >= (major, minor)
+    except Exception:
+        return False
+
+def go_to_agg_page():
+    import time as _t
+    st.session_state["agg_refresh_key"] = _t.time()  # 集計ページ側で「再集計しました」トースト用
+
+    # 1) 新しめの環境：st.switch_page（相対パス指定）
+    if _streamlit_ver_ge(1, 30):
+        try:
+            st.switch_page("pages/01_集計.py")
+            return
+        except Exception:
+            pass
+
+    # 2) st.page_link があるなら、不可視リンクを自動クリック（hrefはStreamlitが正しく生成）
+    if hasattr(st, "page_link"):
+        hide = st.empty()
+        with hide:
+            st.markdown('<div id="__autonav__" style="display:none">', unsafe_allow_html=True)
+            st.page_link("pages/01_集計.py", label="__AUTO_NAV_AGG__", icon="📊")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        components.html("""
+        <script>
+          function clickHiddenLink(){
+            try{
+              const doc = window.parent.document;
+              const as = Array.from(doc.querySelectorAll('a'));
+              const target = as.find(a => (a.innerText||'').includes('__AUTO_NAV_AGG__'));
+              if (target){ target.click(); return true; }
+            }catch(e){}
+            return false;
+          }
+          setTimeout(clickHiddenLink, 150);
+          setTimeout(clickHiddenLink, 600);
+          setTimeout(clickHiddenLink, 1200);
+        </script>
+        """, height=0)
+        return
+
+    # 3) 最終手段：サイドバーの「集計」リンクを探してクリック（旧環境向け）
+    components.html("""
+    <script>
+      function clickSidebarAgg(){
+        try{
+          const doc = window.parent.document;
+          const as = Array.from(doc.querySelectorAll('a'));
+          const enc = encodeURI('01_集計');
+          const target = as.find(a =>
+            (a.innerText && a.innerText.includes('集計')) ||
+            (a.href && (a.href.includes('01_%E9%9B%86%E8%A8%88') || a.href.includes(enc)))
+          );
+          if (target){ target.click(); return true; }
+        }catch(e){}
+        return false;
+      }
+      setTimeout(clickSidebarAgg, 150);
+      setTimeout(clickSidebarAgg, 600);
+      setTimeout(clickSidebarAgg, 1200);
+    </script>
+    """, height=0)
+
+# ボタン本体（配置はお好みでOK：スコアバー直下が見栄え◎）
+go_cols = st.columns([1, 2, 1])
+with go_cols[1]:
+    st.button("📊 集計ページ（再集計して開く）", type="primary", on_click=go_to_agg_page)
+
+# 念のための手動リンク
+if hasattr(st, "page_link"):
+    st.page_link("pages/01_集計.py", label="➡️ 手動で開く（集計ページ）")
