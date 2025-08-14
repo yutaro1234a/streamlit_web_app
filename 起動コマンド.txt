@@ -1,0 +1,5 @@
+cd C:\Users\pc552\Documents\Python\app\
+
+cd /c/Users/pc552/Documents/python/app
+
+streamlit run main.py
