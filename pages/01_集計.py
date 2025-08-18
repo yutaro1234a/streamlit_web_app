@@ -134,20 +134,33 @@ with tab_score:
     )
     st.dataframe(per_player_all, use_container_width=True)
 
-    st.subheader('🏅CLASS別：得点ランキング')
-    sel_cls = st.selectbox('CLASS を選択', ('初級','中級','上級'), key='cls_pick_for_topN')
-    N_cls = st.number_input("上記何位まで", min_value=1, max_value=500, value=10, step=1, key="topN_cls")
-    cls_df = score_df[score_df['CLASS'] == sel_cls]
-    if cls_df.empty:
-        st.info(f'{sel_cls} の得点データがありません。')
+    st.subheader('🏅得点ランキング CLASS×TEAM')
+    col_sel1, col_sel2, col_sel3 = st.columns([1, 1, 1])
+    with col_sel1:
+        sel_cls = st.selectbox('CLASS', ('初級','中級','上級'), key='cls_pick_for_topN')
+    with col_sel2:
+        sel_team = st.selectbox('TEAM', ('すべて', 'Red', 'Blue'), key='team_pick_for_topN')
+    with col_sel3:
+        N_cls = st.number_input("上位N", min_value=1, max_value=500, value=10, step=1, key="topN_cls")
+
+    subset = score_df[score_df['CLASS'] == sel_cls].copy()
+    if sel_team != 'すべて':
+        subset = subset[subset['TEAM'] == sel_team]
+
+    if subset.empty:
+        if sel_team == 'すべて':
+            st.info(f'{sel_cls} の得点データがありません。')
+        else:
+            st.info(f'{sel_cls} / {sel_team} の得点データがありません。')
     else:
         per_player_cls = (
-            cls_df.groupby(['TEAM','ビブスType','背番号','名前'], as_index=False)['得点']
-            .sum()
-            .sort_values(['得点','TEAM','背番号'], ascending=[False, True, True])
-            .head(int(N_cls))
+            subset.groupby(['TEAM','ビブスType','背番号','名前'], as_index=False)['得点']
+                .sum()
+                .sort_values(['得点','TEAM','背番号'], ascending=[False, True, True])
+                .head(int(N_cls))
         )
         st.dataframe(per_player_cls, use_container_width=True)
+
 
 with tab_stat:
     st.subheader('📌TEAM')
