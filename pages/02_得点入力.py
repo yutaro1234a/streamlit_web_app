@@ -40,7 +40,7 @@ players_df = load_players()
 
 st.session_state.setdefault("last_action_ts", 0)
 
-st.title("🏀RUNNING SCORE")
+st.title("🏀SCORE")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">
@@ -105,7 +105,7 @@ def add_score(action_label: str):
     notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
 # 得点ボタン
-st.caption("タップで即登録（3pt / 2pt / 1pt）")
+st.caption("タップで登録")
 c1, c2, c3 = st.columns(3)
 with c1:
     st.button("🏀 3pt", on_click=add_score, args=("3pt",), use_container_width=True)
@@ -131,8 +131,6 @@ st.markdown("---")
 if hasattr(st, "page_link"):
     cols_nav = st.columns(3)
     with cols_nav[0]:
-        st.page_link("main.py", label="🏠 メイン（入力＆ログ）", icon="🏠", use_container_width=True)
+        st.page_link("pages/01_集計.py", label="📊 集計", icon="➡️", use_container_width=True)
     with cols_nav[1]:
-        st.page_link("pages/01_集計.py", label="📊 集計", icon="📊", use_container_width=True)
-    with cols_nav[2]:
-        st.write("")  # 将来のスタッツ/反則入力リンク用プレースホルダ
+        st.write("")
