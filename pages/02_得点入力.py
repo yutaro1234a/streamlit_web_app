@@ -88,7 +88,7 @@ with row2_right:
     if not filtered.empty:
         display_options = filtered["表示"].tolist()
         selected_player = st.selectbox(
-            "🤾‍ 選手（背番号 - 名前 - ビブス）",
+            "⛹️‍♂️ 選手（背番号 - 名前 - ビブス）",
             display_options,
             key="score_player_select"  # 従来キーのままでもOK
         )
@@ -122,15 +122,24 @@ with c3:
 
 # 直近ログ（プルダウンで開く）
 st.markdown("---")
-with st.expander("📋 直近ログ（タップで開く）", expanded=False):
+with st.expander("📋 直近ログ得点ログ（タップで開く）", expanded=False):
     N = st.number_input("表示件数", min_value=5, max_value=200, value=20, step=5, key="score_recent_n")
     recent = read_recent_df(conn, n=int(N))
-    if recent.empty:
+
+    if recent.empty or "得点・アシスト" not in recent.columns:
         st.info("表示できるデータがありません。")
     else:
-        order = ['id','created_at','CLASS','TEAM','ビブスType','背番号','名前','得点・アシスト','クォーター']
-        cols = [c for c in order if c in recent.columns] + [c for c in recent.columns if c not in order]
-        st.dataframe(recent[cols], use_container_width=True, height=360)
+        # ✅ 得点アクションだけ抽出
+        score_actions = {"1pt", "2pt", "3pt"}
+        recent_score = recent[recent["得点・アシスト"].isin(score_actions)].copy()
+
+        if recent_score.empty:
+            st.info("得点のログがありません。")
+        else:
+            # 見やすい列順に整列（存在する列だけ適用）
+            order = ['id','created_at','CLASS','TEAM','ビブスType','背番号','名前','得点・アシスト','クォーター']
+            cols = [c for c in order if c in recent_score.columns] + [c for c in recent_score.columns if c not in order]
+            st.dataframe(recent_score[cols], use_container_width=True, height=360)
 
 # ナビゲーション（同一タブ）
 st.markdown("---")

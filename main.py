@@ -3,7 +3,7 @@ import streamlit as st
 
 # ★ 最初に1回だけ
 st.set_page_config(
-    page_title="🏀 ランニングスコア（入力＆ログ）",
+    page_title="🏀RUNNING SCORE",
     layout="centered",
     initial_sidebar_state="expanded"
 )
@@ -45,12 +45,12 @@ st.session_state.setdefault("last_insert_id", None)
 st.session_state.setdefault("last_action_ts", 0)
 
 # タイトル & 固定バー
-st.title("🏀 ランニングスコア（入力）")
+st.title("🏀RUNNING SCORE")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">
   <div class="scorebox">
-    <div class="info">📊 全データ合計スコア</div>
+    <div class="info">📊TOTAL SCORE</div>
     <div>
       <span class="scorechip red">Red: {red_pts}</span>
       <span class="scorechip blue">Blue: {blue_pts}</span>
@@ -60,14 +60,15 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 入力UI
-quarter   = st.selectbox('⏱️ クォーター', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
-classType = st.radio('🏫 CLASS', ('初級','中級','上級'), horizontal=True, key="class_radio")
+classType = st.radio('🚀 CLASS', ('初級','中級','上級'), horizontal=True, key="class_radio")
 team      = st.radio('🟥 TEAM',  ('Red','Blue'), horizontal=True, key="team_radio")
+quarter   = st.selectbox('⏱️ Quarter', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
+
 
 filtered = players_df[(players_df['CLASS']==classType) & (players_df['TEAM']==team)].copy()
 if not filtered.empty:
     display_options = filtered['表示'].tolist()
-    selected_player = st.selectbox("🙋‍♂️ 選手（背番号 - 名前 - ビブス）", display_options, key="player_select")
+    selected_player = st.selectbox("⛹️‍♂️ 選手（背番号 - 名前 - ビブス）", display_options, key="player_select")
     row = filtered[filtered['表示']==selected_player].iloc[0]
     uniformNumber = row['背番号']; playerName = row['プレイヤー名']; bibsType = row['ビブスType']
 else:

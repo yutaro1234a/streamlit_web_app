@@ -42,7 +42,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("選手登録画面 🏀")
+st.title("🏀選手登録")
 st.caption("選手の背番号・名前・チーム・ビブスType・CLASSを登録します")
 
 # 入力フォーム

@@ -89,7 +89,7 @@ with row2_right:
     if not filtered.empty:
         display_options = filtered["表示"].tolist()
         selected_player = st.selectbox(
-            "🤾‍ 選手（背番号 - 名前 - ビブス）",
+            "⛹️‍♂️ 選手（背番号 - 名前 - ビブス）",
             display_options,
             key="score_player_select"  # 従来キーのままでもOK
         )

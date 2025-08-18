@@ -59,11 +59,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 入力UI（キーはこのページ専用に）
-classType = st.radio("🚀 CLASS", ("初級", "中級", "上級"), horizontal=True, key="stat_class_radio")
-team      = st.radio("🟥 TEAM",  ("Red", "Blue"), horizontal=True, key="stat_team_radio")
-quarter   = st.selectbox("⏱️ クォーター", ("Q1", "Q2", "Q3", "Q4", "OT"), key="stat_quarter_select")
-
-# プレイヤー選択
 # CLASS / TEAM / QUARTER を “ピル型セグメント” に
 row1_left, row1_right = st.columns(2)
 with row1_left:
@@ -93,7 +88,7 @@ with row2_right:
     if not filtered.empty:
         display_options = filtered["表示"].tolist()
         selected_player = st.selectbox(
-            "🤾‍ 選手（背番号 - 名前 - ビブス）",
+            "⛹️‍♂️ 選手（背番号 - 名前 - ビブス）",
             display_options,
             key="score_player_select"  # 従来キーのままでもOK
         )
@@ -120,7 +115,7 @@ def add_stat(action_label: str):
     notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
 # スタッツボタン
-st.caption("タップで即登録（アシスト / ブロック / リバウンド / スティール）")
+st.caption("タップで登録")
 r1c1, r1c2 = st.columns(2); r2c1, r2c2 = st.columns(2)
 with r1c1: st.button("🅰️ アシスト",   on_click=add_stat, args=("アシスト",),   use_container_width=True)
 with r1c2: st.button("🧱 ブロック",     on_click=add_stat, args=("ブロック",),     use_container_width=True)
