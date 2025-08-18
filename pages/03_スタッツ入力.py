@@ -2,6 +2,13 @@
 import streamlit as st
 from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
 
+from lib_db import (
+    # 既存...
+    get_conn, inject_css, inject_mobile_big_ui, load_players, notify,
+    add_event_sql, get_score_red_blue, read_recent_df, STAT_SET,
+    delete_events_by_ids,
+)
+
 # このページの最初の Streamlit コマンド
 st.set_page_config(
     page_title="📈STATS INPUT",
@@ -122,20 +129,61 @@ with r1c2: st.button("🧱 ブロック",     on_click=add_stat, args=("ブロ�
 with r2c1: st.button("🏗️ リバウンド", on_click=add_stat, args=("リバウンド",), use_container_width=True)
 with r2c2: st.button("🕵️ スティール", on_click=add_stat, args=("スティール",), use_container_width=True)
 
-# 直近スタッツログ（プルダウンで開く）
+# 直近スタッツログ（行末🗑️で削除）
 st.markdown("---")
-with st.expander("📋 直近スタッツログ（タップで開く）", expanded=False):
-    N = st.number_input("表示件数（取得後にスタッツで絞り込み）", min_value=5, max_value=300, value=30, step=5, key="stat_recent_n")
+with st.expander("📋 直近スタッツログ（削除可）", expanded=False):
+    N = st.number_input("表示件数", min_value=5, max_value=300, value=30, step=5, key="stat_recent_n")
     recent = read_recent_df(conn, n=int(N))
-    # スタッツのみ抽出
-    if not recent.empty and "得点・アシスト" in recent.columns:
-        recent = recent[recent["得点・アシスト"].isin(STAT_SET)]
-    if recent.empty:
+
+    if recent.empty or "得点・アシスト" not in recent.columns:
         st.info("表示できるスタッツデータがありません。")
     else:
-        order = ['id','created_at','CLASS','TEAM','ビブスType','背番号','名前','得点・アシスト','クォーター']
-        cols = [c for c in order if c in recent.columns] + [c for c in recent.columns if c not in order]
-        st.dataframe(recent[cols], use_container_width=True, height=360)
+        recent = recent[recent["得点・アシスト"].isin(STAT_SET)].copy()
+
+        if recent.empty:
+            st.info("表示できるスタッツデータがありません。")
+        else:
+            order = ['id','created_at','CLASS','TEAM','ビブスType','背番号','名前','得点・アシスト','クォーター']
+            cols = [c for c in order if c in recent.columns] + [c for c in recent.columns if c not in order]
+            recent = recent[cols].copy()
+            if 'id' in recent.columns:
+                recent['id'] = recent['id'].astype(int)
+
+            supports_btn_col = hasattr(st, "column_config") and hasattr(st.column_config, "ButtonColumn")
+            if supports_btn_col:
+                df_btn = recent.copy()
+                df_btn["削除"] = False
+                disabled_cols = [c for c in df_btn.columns if c != "削除"]
+                edited = st.data_editor(
+                    df_btn,
+                    hide_index=True, use_container_width=True, height=360, num_rows="fixed",
+                    disabled=disabled_cols,
+                    column_config={"削除": st.column_config.ButtonColumn(label="", help="この行を削除", icon="🗑️", width="small")},
+                    key="stat_recent_editor_btn",
+                )
+                del_ids = edited.loc[edited.get("削除", False) == True, "id"].astype(int).tolist() if "id" in edited.columns else []
+                if del_ids:
+                    delete_events_by_ids(conn, del_ids)
+                    st.success(f"{len(del_ids)} 件を削除しました。")
+                    try: st.rerun()
+                    except Exception:
+                        try: st.experimental_rerun()
+                        except Exception: pass
+            else:
+                df_edit = recent.copy()
+                df_edit['削除'] = False
+                edited = st.data_editor(df_edit, hide_index=True, use_container_width=True, height=360, num_rows="fixed", key="stat_recent_editor_fb")
+                del_ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist() if 'id' in edited.columns else []
+                if st.button("🗑️ チェックした行を削除", type="primary", use_container_width=True, key="stat_del_btn_fb"):
+                    if del_ids:
+                        delete_events_by_ids(conn, del_ids)
+                        st.success(f"{len(del_ids)} 件を削除しました。")
+                        try: st.rerun()
+                        except Exception:
+                            try: st.experimental_rerun()
+                            except Exception: pass
+                    else:
+                        st.warning("削除対象が選ばれていません。")
 
 # ナビゲーション（同一タブ）
 st.markdown("---")
