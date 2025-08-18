@@ -1,9 +1,8 @@
 # ui_components.py
+from __future__ import annotations
 import streamlit as st
 import inspect
 from typing import List, Dict, Optional
-
-from __future__ import annotations
 
 def safe_rerun():
     try:
