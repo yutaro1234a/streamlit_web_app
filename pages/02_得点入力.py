@@ -4,7 +4,7 @@ from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_co
 
 # 🔴 このページで最初の Streamlit コマンドはこれ！
 st.set_page_config(
-    page_title="🏀 RUNNING SCORE",
+    page_title="🏀RUNNING SCORE",
     layout="centered",
     initial_sidebar_state="expanded",
 )
@@ -40,7 +40,7 @@ players_df = load_players()
 
 st.session_state.setdefault("last_action_ts", 0)
 
-st.title("🏀 RUNNING SCORE")
+st.title("🏀RUNNING SCORE")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">

@@ -1,6 +1,7 @@
 # ui_components.py
 import streamlit as st
 import inspect
+from typing import List, Dict, Optional
 
 def safe_rerun():
     try:
@@ -22,7 +23,12 @@ def inject_touch_ui_css():
     </style>
     """, unsafe_allow_html=True)
 
-def segmented_picker(label: str, options: list[str], key: str, color_map: dict[str, str] | None = None) -> str:
+def segmented_picker(
+    label: str,
+    options: List[str],
+    key: str,
+    color_map: Optional[Dict[str, str]] = None,
+) -> str:
     """キー衝突しないピル風セグメント（内部で一意キーを自動生成）"""
     cur = st.session_state.get(key, options[0])
 
@@ -44,7 +50,13 @@ def segmented_picker(label: str, options: list[str], key: str, color_map: dict[s
 
         if cols[i].button(show, key=btn_key, use_container_width=True):
             st.session_state[key] = opt
-            safe_rerun()
+            try:
+                st.rerun()
+            except Exception:
+                try:
+                    st.experimental_rerun()
+                except Exception:
+                    pass
 
     return st.session_state.get(key, options[0])
 
