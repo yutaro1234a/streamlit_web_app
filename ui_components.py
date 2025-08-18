@@ -3,6 +3,8 @@ import streamlit as st
 import inspect
 from typing import List, Dict, Optional
 
+from __future__ import annotations
+
 def safe_rerun():
     try:
         st.rerun()
@@ -105,12 +107,19 @@ def inject_compact_pick_css():
     </style>
     """, unsafe_allow_html=True)
 
-def radio_compact(label: str, options: list[str], key: str, *, horizontal: bool = True, index: int | None = None):
+def radio_compact(
+    label: str,
+    options: List[str],
+    key: str,
+    *,
+    horizontal: bool = True,
+    index: Optional[int] = None,
+):
     """見た目コンパクトなラジオ（実体は st.radio）"""
     return st.radio(
         label,
         options,
         key=key,
         horizontal=horizontal,
-        index=index if index is not None else 0
+        index=index if index is not None else 0,
     )
