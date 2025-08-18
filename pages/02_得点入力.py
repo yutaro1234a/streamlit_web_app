@@ -2,9 +2,9 @@
 import streamlit as st
 from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
 
-# 🔴 このページで最初の Streamlit コマンドはこれ！
+# このページの最初の Streamlit コマンド
 st.set_page_config(
-    page_title="🏀RUNNING SCORE",
+    page_title="🏀SCORE INPUT",
     layout="centered",
     initial_sidebar_state="expanded",
 )
@@ -23,6 +23,7 @@ inject_mobile_big_ui()
 inject_touch_ui_css()
 inject_compact_pick_css()
 
+# どのバージョンでも動くリロード（必要時）
 def safe_rerun():
     try:
         st.rerun()
@@ -35,11 +36,14 @@ def safe_rerun():
             except Exception:
                 st.warning("🔄 画面を更新してください（Ctrl/Cmd + R）")
 
+# DB / データ
 conn = get_conn()
 players_df = load_players()
 
+# 状態
 st.session_state.setdefault("last_action_ts", 0)
 
+# タイトル & 固定バー
 st.title("🏀SCORE")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
@@ -54,6 +58,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# 入力UI（キーはこのページ専用に）
 # CLASS / TEAM / QUARTER を “ピル型セグメント” に
 row1_left, row1_right = st.columns(2)
 with row1_left:
@@ -93,6 +98,7 @@ with row2_right:
         st.warning(f"CLASS={classType} / TEAM={team} の選手がいません。先に選手登録をご確認ください。")
         uniformNumber = "--"; playerName = ""; bibsType = ""
 
+# 登録関数（誤連打ガード）
 def add_score(action_label: str):
     now = time.time()
     if now - st.session_state.last_action_ts < 0.35:
@@ -129,7 +135,7 @@ with st.expander("📋 直近ログ（タップで開く）", expanded=False):
 # ナビゲーション（同一タブ）
 st.markdown("---")
 if hasattr(st, "page_link"):
-    cols_nav = st.columns(3)
+    cols_nav = st.columns(2)
     with cols_nav[0]:
         st.page_link("pages/01_集計.py", label="📊 集計", icon="➡️", use_container_width=True)
     with cols_nav[1]:

@@ -1,9 +1,10 @@
 # pages/03_スタッツ入力.py
 import streamlit as st
+from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
 
 # このページの最初の Streamlit コマンド
 st.set_page_config(
-    page_title="📈 スタッツ入力",
+    page_title="📈STATS INPUT",
     layout="centered",
     initial_sidebar_state="expanded",
 )
@@ -19,6 +20,8 @@ from lib_db import (
 # set_page_config の後に適用（内部で st.markdown を使うため）
 inject_css()
 inject_mobile_big_ui()
+inject_touch_ui_css()
+inject_compact_pick_css()
 
 # どのバージョンでも動くリロード（必要時）
 def safe_rerun():
@@ -41,12 +44,12 @@ players_df = load_players()
 st.session_state.setdefault("stat_last_action_ts", 0)
 
 # タイトル & 固定バー
-st.title("📈 スタッツ入力")
+st.title("📈STATS")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">
   <div class="scorebox">
-    <div class="info">📊 全データ合計スコア</div>
+    <div class="info">📊TOTAL SCORE</div>
     <div>
       <span class="scorechip red">Red: {red_pts}</span>
       <span class="scorechip blue">Blue: {blue_pts}</span>
@@ -56,20 +59,49 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 入力UI（キーはこのページ専用に）
-classType = st.radio("🏫 CLASS", ("初級", "中級", "上級"), horizontal=True, key="stat_class_radio")
+classType = st.radio("🚀 CLASS", ("初級", "中級", "上級"), horizontal=True, key="stat_class_radio")
 team      = st.radio("🟥 TEAM",  ("Red", "Blue"), horizontal=True, key="stat_team_radio")
 quarter   = st.selectbox("⏱️ クォーター", ("Q1", "Q2", "Q3", "Q4", "OT"), key="stat_quarter_select")
 
 # プレイヤー選択
-filtered = players_df[(players_df["CLASS"] == classType) & (players_df["TEAM"] == team)].copy()
-if not filtered.empty:
-    display_options = filtered["表示"].tolist()
-    selected_player = st.selectbox("🙋‍♂️ 選手（背番号 - 名前 - ビブス）", display_options, key="stat_player_select")
-    row = filtered[filtered["表示"] == selected_player].iloc[0]
-    uniformNumber = row["背番号"]; playerName = row["プレイヤー名"]; bibsType = row["ビブスType"]
-else:
-    st.warning(f"CLASS={classType} / TEAM={team} の選手がいません。先に選手登録をご確認ください。")
-    uniformNumber = "--"; playerName = ""; bibsType = ""
+# CLASS / TEAM / QUARTER を “ピル型セグメント” に
+row1_left, row1_right = st.columns(2)
+with row1_left:
+    class_opts = ["初級", "中級", "上級"]
+    classType = radio_compact("🚀 CLASS", class_opts, key="score_class_radio_compact",
+                              index=class_opts.index(st.session_state.get("score_class_radio_compact",
+                                                                          st.session_state.get("score_class_radio", "初級")))
+                             )
+with row1_right:
+    # 直感性UPのため絵文字で色を表現
+    team_opts_lbl = ["🔴 Red", "🔵 Blue"]
+    team_lbl = radio_compact("🟥 TEAM", team_opts_lbl, key="score_team_radio_compact",
+                             index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
+    team = "Red" if "Red" in team_lbl else "Blue"
+
+# 2段目：QUARTER（左：小さめピル） / 選手（右：セレクト）
+row2_left, row2_right = st.columns([1, 2])  # 選手に多く幅を割り当て
+with row2_left:
+    q_opts = ["Q1", "Q2", "Q3", "Q4", "OT"]
+    quarter = radio_compact("⏱️ Quarter", q_opts, key="score_quarter_radio_compact",
+                             index=q_opts.index(st.session_state.get("score_quarter_radio_compact",
+                                                                     st.session_state.get("score_quarter_select", "Q1")))
+                            )
+with row2_right:
+    # プレイヤー選択（検索可）も省スペース化：ラベル小さめ・上下余白圧縮はCSSで済
+    filtered = players_df[(players_df["CLASS"] == classType) & (players_df["TEAM"] == team)].copy()
+    if not filtered.empty:
+        display_options = filtered["表示"].tolist()
+        selected_player = st.selectbox(
+            "🤾‍ 選手（背番号 - 名前 - ビブス）",
+            display_options,
+            key="score_player_select"  # 従来キーのままでもOK
+        )
+        row = filtered[filtered["表示"] == selected_player].iloc[0]
+        uniformNumber = row["背番号"]; playerName = row["プレイヤー名"]; bibsType = row["ビブスType"]
+    else:
+        st.warning(f"CLASS={classType} / TEAM={team} の選手がいません。先に選手登録をご確認ください。")
+        uniformNumber = "--"; playerName = ""; bibsType = ""
 
 # 登録関数（誤連打ガード）
 def add_stat(action_label: str):
@@ -113,10 +145,8 @@ with st.expander("📋 直近スタッツログ（タップで開く）", expand
 # ナビゲーション（同一タブ）
 st.markdown("---")
 if hasattr(st, "page_link"):
-    cols_nav = st.columns(3)
+    cols_nav = st.columns(2)
     with cols_nav[0]:
-        st.page_link("main.py", label="🏠 メイン（入力＆ログ）", icon="🏠", use_container_width=True)
+        st.page_link("pages/01_集計.py", label="📊 集計", icon="➡️", use_container_width=True)
     with cols_nav[1]:
-        st.page_link("pages/01_集計.py", label="📊 集計", icon="📊", use_container_width=True)
-    with cols_nav[2]:
-        st.page_link("pages/02_得点入力.py", label="🏀 得点入力", icon="🏀", use_container_width=True)
+        st.write("")
