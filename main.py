@@ -114,8 +114,8 @@ st.session_state["active_tab"] = tab
 if tab == "🧮 得点":
     st.caption("タップで登録")
     c1, c2, c3 = st.columns(3)
-    with c1:  st.button("🏀 2pt", on_click=add_event, args=("2pt",))
-    with c2:  st.button("🏀 3pt", on_click=add_event, args=("3pt",))
+    with c1:  st.button("🏀 3pt", on_click=add_event, args=("3pt",))
+    with c2:  st.button("🏀 2pt", on_click=add_event, args=("2pt",))
     with c3:  st.button("🏀 1pt", on_click=add_event, args=("1pt",))
 
 elif tab == "📈 スタッツ":

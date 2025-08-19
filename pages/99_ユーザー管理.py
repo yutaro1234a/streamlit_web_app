@@ -41,22 +41,6 @@ if not me or me.get("role") != "admin":
 
 st.title("👑 ユーザー管理")
 
-# 内部遷移（mainへ戻る）
-cols_top = st.columns([1, 2, 1])
-with cols_top[1]:
-    if hasattr(st, "page_link"):
-        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
-    else:
-        if st.button("⬅️ main画面へ戻る", use_container_width=True):
-            try:
-                if hasattr(st, "switch_page"):
-                    st.switch_page("main.py")
-                else:
-                    st.experimental_set_query_params()
-                    st.experimental_rerun()
-            except Exception:
-                pass
-
 # DB 準備
 conn = get_conn()
 app_auth.ensure_users_table(conn)
@@ -183,3 +167,19 @@ with col_edit:
                             except Exception: pass
                 else:
                     st.error("確認文字が一致しません。")
+
+# 内部遷移（mainへ戻る）
+cols_top = st.columns([1, 2, 1])
+with cols_top[1]:
+    if hasattr(st, "page_link"):
+        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
+    else:
+        if st.button("⬅️ main画面へ戻る", use_container_width=True):
+            try:
+                if hasattr(st, "switch_page"):
+                    st.switch_page("main.py")
+                else:
+                    st.experimental_set_query_params()
+                    st.experimental_rerun()
+            except Exception:
+                pass
