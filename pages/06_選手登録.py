@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import os
 
+from auth import require_login, render_userbox
+
+require_login()     # ← 未ログインならログインへ誘導して stop
+render_userbox()    # ← サイドバーに「ログイン中」「ログアウト」表示
+
 PLAYER_CSV = 'players.csv'
 
 # --- スタイリング CSS（円形ボタン含む） ---

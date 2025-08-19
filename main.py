@@ -1,6 +1,11 @@
 # main.py
 import streamlit as st
 
+from auth import require_login, render_userbox
+
+require_login()     # ← 未ログインならログインへ誘導して stop
+render_userbox()    # ← サイドバーに「ログイン中」「ログアウト」表示
+
 # ★ 最初に1回だけ
 st.set_page_config(
     page_title="🏀RUNNING SCORE",

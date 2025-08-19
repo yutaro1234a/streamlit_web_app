@@ -10,6 +10,11 @@ from lib_db import (
     POINT_MAP, STAT_SET, FOUL_SET
 )
 
+from auth import require_login, render_userbox
+
+require_login()     # ← 未ログインならログインへ誘導して stop
+render_userbox()    # ← サイドバーに「ログイン中」「ログアウト」表示
+
 st.set_page_config(page_title="📊SCORE TALLY", layout="centered", initial_sidebar_state="expanded")
 inject_css()
 conn = get_conn()

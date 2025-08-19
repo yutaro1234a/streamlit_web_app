@@ -9,6 +9,11 @@ from lib_db import (
     delete_events_by_ids,
 )
 
+from auth import require_login, render_userbox
+
+require_login()     # ← 未ログインならログインへ誘導して stop
+render_userbox()    # ← サイドバーに「ログイン中」「ログアウト」表示
+
 # このページで最初の Streamlit コマンド
 st.set_page_config(
     page_title="🚨FOUL INPUT",
