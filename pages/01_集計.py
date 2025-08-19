@@ -255,4 +255,3 @@ with col_mid:
                 # 最終手段：?page= を消してルートへ（同一タブ）
                 st.experimental_set_query_params()
                 st.experimental_rerun()
-
