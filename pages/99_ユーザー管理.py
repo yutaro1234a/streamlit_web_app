@@ -19,7 +19,7 @@ from lib_db import get_conn, inject_css, inject_mobile_big_ui
 
 # --- auth は“モジュールとして”読み込む（関数名ミスマッチを回避） ---
 try:
-    import auth  # auth.require_login などで参照する
+    import app_auth as app_auth  # auth.require_login などで参照する
 except Exception as e:
     st.error(f"auth モジュールの読み込みに失敗しました: {e}")
     # ここで止める（Cloud で詳細はレッドアクトされるため）
@@ -30,11 +30,11 @@ inject_css()
 inject_mobile_big_ui()
 
 # 認証
-auth.require_login()
-auth.render_userbox()
+app_auth.require_login()
+app_auth.render_userbox()
 
 # ★ 管理者チェック（ページ内で実施）
-me = auth.get_current_user()
+me = app_auth.get_current_user()
 if not me or me.get("role") != "admin":
     st.error("このページは管理者のみ利用できます。")
     st.stop()
@@ -59,10 +59,10 @@ with cols_top[1]:
 
 # DB 準備
 conn = get_conn()
-auth.ensure_users_table(conn)
+app_auth.ensure_users_table(conn)
 
 # ユーザー一覧
-rows = auth.list_users(conn)  # [(id, username, role, created_at), ...]
+rows = app_auth.list_users(conn)  # [(id, username, role, created_at), ...]
 df = pd.DataFrame(rows, columns=["id", "username", "role", "created_at"]) if rows else pd.DataFrame(columns=["id","username","role","created_at"])
 
 st.subheader("👥 ユーザー一覧")
@@ -97,7 +97,7 @@ with col_add:
         elif new_p1 != new_p2:
             st.error("確認用パスワードが一致しません。")
         else:
-            ok, msg = auth.create_user(conn, new_u, new_p1, role=new_role)
+            ok, msg = app_auth.create_user(conn, new_u, new_p1, role=new_role)
             (st.success if ok else st.error)(msg)
             if ok:
                 try: st.rerun()
@@ -125,7 +125,7 @@ with col_edit:
                 new_name = st.text_input("新しいユーザー名", value=sel_row.username, key="edit_username_value")
                 ok_uname = st.form_submit_button("✏️ ユーザー名を変更", use_container_width=True)
             if ok_uname:
-                ok, msg = auth.change_username(conn, user_id=int(sel_row.id), new_username=new_name)
+                ok, msg = app_auth.change_username(conn, user_id=int(sel_row.id), new_username=new_name)
                 (st.success if ok else st.error)(msg)
                 if ok:
                     try: st.rerun()
@@ -162,7 +162,7 @@ with col_edit:
                 if pw1 != pw2:
                     st.error("確認用パスワードが一致しません。")
                 else:
-                    ok, msg = auth.admin_set_password(conn, int(sel_row.id), pw1)
+                    ok, msg = app_auth.admin_set_password(conn, int(sel_row.id), pw1)
                     (st.success if ok else st.error)(msg)
 
             st.markdown("")
@@ -174,7 +174,7 @@ with col_edit:
                 ok_del = st.form_submit_button("🗑️ ユーザーを削除", use_container_width=True)
             if ok_del:
                 if confirm_txt.strip() == f"DELETE {int(sel_row.id)}":
-                    ok, msg = auth.admin_delete_user(conn, int(sel_row.id), acting_user_id=int(me["id"]))
+                    ok, msg = app_auth.admin_delete_user(conn, int(sel_row.id), acting_user_id=int(me["id"]))
                     (st.success if ok else st.error)(msg)
                     if ok:
                         try: st.rerun()

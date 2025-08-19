@@ -10,7 +10,7 @@ from lib_db import (
     POINT_MAP, STAT_SET, FOUL_SET
 )
 
-from auth import require_login, render_userbox
+from app_auth import require_login, render_userbox
 
 require_login()     # ← 未ログインならログインへ誘導して stop
 render_userbox()    # ← サイドバーに「ログイン中」「ログアウト」表示

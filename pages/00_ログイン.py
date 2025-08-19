@@ -1,7 +1,7 @@
 # pages/00_ログイン.py
 import streamlit as st
 from lib_db import get_conn, inject_css, inject_mobile_big_ui
-from auth import ensure_users_table, users_count, create_user, authenticate
+from app_auth import ensure_users_table, users_count, create_user, authenticate
 
 # set_page_config は最初の1回だけ
 if not st.session_state.get("_pc_set", False):
