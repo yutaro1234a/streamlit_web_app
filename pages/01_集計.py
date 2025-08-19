@@ -53,45 +53,19 @@ if df.empty:
     
     # これに置き換え（変数名を明示的に）
     col_left, col_mid, col_right = st.columns([1, 2, 1])
-    with col_mid:  # 中央に置きたいなら col_mid に変えてOK
-        st.markdown("""
-        <style>
-        /* 共通スタイル */
-        .btn-back-pc, .btn-back-sp {
-            display:none;            /* まず両方隠す → メディアクエリで出す */
-            width:100%;
-            text-align:center;
-            text-decoration:none !important;
-            border:1px solid #ddd;
-            border-radius:14px;
-            font-weight:700;
-        }
-        .btn-back-pc:active, .btn-back-sp:active { transform: translateY(1px); }
-
-        /* === PC / タブレット（幅768px以上）で表示 === */
-        @media (min-width: 768px) {
-            .btn-back-pc {
-            display:block;
-            background:#efefef; color:inherit;
-            padding:14px 16px; font-size:18px;
-            }
-        }
-
-        /* === スマホ（幅767px以下）で表示 === */
-        @media (max-width: 767px) {
-            .btn-back-sp {
-            display:block;
-            background:#111827; color:#fff;
-            padding:16px 18px; font-size:20px;
-            }
-        }
-        </style>
-
-        <!-- PC用 / SP用 を両方描画して、CSSで出し分け -->
-        <a class="btn-back-pc" href="/" target="_self">⬅️ main画面へ戻る</a>
-        <a class="btn-back-sp" href="/" target="_self">⬅️ mainへ戻る</a>
-        """, unsafe_allow_html=True)
-
+    with col_mid:
+        # 新しめの環境
+        if hasattr(st, "page_link"):
+            st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
+        else:
+            # フォールバック：Python側で内部遷移（セッション維持）
+            if st.button("⬅️ main画面へ戻る", use_container_width=True):
+                try:
+                    st.switch_page("main.py")
+                except Exception:
+                    # 最終手段：?page= を消してルートへ（同一タブ）
+                    st.experimental_set_query_params()
+                    st.experimental_rerun()
 
     st.stop()
 
@@ -268,42 +242,17 @@ with tab_foul:
 
 # これに置き換え（変数名を明示的に）
 col_left, col_mid, col_right = st.columns([1, 2, 1])
-with col_mid:  # 中央に置きたいなら col_mid に変えてOK
-    st.markdown("""
-    <style>
-      /* 共通スタイル */
-      .btn-back-pc, .btn-back-sp {
-        display:none;            /* まず両方隠す → メディアクエリで出す */
-        width:100%;
-        text-align:center;
-        text-decoration:none !important;
-        border:1px solid #ddd;
-        border-radius:14px;
-        font-weight:700;
-      }
-      .btn-back-pc:active, .btn-back-sp:active { transform: translateY(1px); }
-
-      /* === PC / タブレット（幅768px以上）で表示 === */
-      @media (min-width: 768px) {
-        .btn-back-pc {
-          display:block;
-          background:#efefef; color:inherit;
-          padding:14px 16px; font-size:18px;
-        }
-      }
-
-      /* === スマホ（幅767px以下）で表示 === */
-      @media (max-width: 767px) {
-        .btn-back-sp {
-          display:block;
-          background:#111827; color:#fff;
-          padding:16px 18px; font-size:20px;
-        }
-      }
-    </style>
-
-    <!-- PC用 / SP用 を両方描画して、CSSで出し分け -->
-    <a class="btn-back-pc" href="/" target="_self">⬅️ main画面へ戻る</a>
-    <a class="btn-back-sp" href="/" target="_self">⬅️ mainへ戻る</a>
-    """, unsafe_allow_html=True)
+with col_mid:
+    # 新しめの環境
+    if hasattr(st, "page_link"):
+        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
+    else:
+        # フォールバック：Python側で内部遷移（セッション維持）
+        if st.button("⬅️ main画面へ戻る", use_container_width=True):
+            try:
+                st.switch_page("main.py")
+            except Exception:
+                # 最終手段：?page= を消してルートへ（同一タブ）
+                st.experimental_set_query_params()
+                st.experimental_rerun()
 
