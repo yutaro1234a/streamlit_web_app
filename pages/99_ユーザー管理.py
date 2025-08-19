@@ -1,8 +1,8 @@
 # pages/99_ユーザー管理.py
-import streamlit as st
+import os, sys, streamlit as st
 import pandas as pd
 
-# 最初の1回だけ page_config
+# --- page_config（最初の1回だけ） ---
 if not st.session_state.get("_pc_set", False):
     try:
         st.set_page_config(page_title="👑 ユーザー管理", layout="centered", initial_sidebar_state="expanded")
@@ -10,29 +10,41 @@ if not st.session_state.get("_pc_set", False):
         pass
     st.session_state["_pc_set"] = True
 
+# --- ルート（main.py と同じ階層）を import パスへ追加 ---
+ROOT = os.path.dirname(os.path.dirname(__file__))  # /.../app
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 from lib_db import get_conn, inject_css, inject_mobile_big_ui
-from auth import (
-    ensure_users_table, require_login, require_admin, render_userbox,
-    list_users, create_user, change_username, admin_set_password, admin_delete_user,
-    get_current_user
-)
+
+# --- auth は“モジュールとして”読み込む（関数名ミスマッチを回避） ---
+try:
+    import auth  # auth.require_login などで参照する
+except Exception as e:
+    st.error(f"auth モジュールの読み込みに失敗しました: {e}")
+    # ここで止める（Cloud で詳細はレッドアクトされるため）
+    st.stop()
 
 # 共通UI
 inject_css()
 inject_mobile_big_ui()
 
-# 認証・権限
-require_login()
-require_admin()
-render_userbox()
+# 認証
+auth.require_login()
+auth.render_userbox()
+
+# ★ 管理者チェック（ページ内で実施）
+me = auth.get_current_user()
+if not me or me.get("role") != "admin":
+    st.error("このページは管理者のみ利用できます。")
+    st.stop()
 
 st.title("👑 ユーザー管理")
 
-# 内部遷移（mainへ戻る）推奨ボタン
-has_pagelink = hasattr(st, "page_link")
+# 内部遷移（mainへ戻る）
 cols_top = st.columns([1, 2, 1])
 with cols_top[1]:
-    if has_pagelink:
+    if hasattr(st, "page_link"):
         st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
     else:
         if st.button("⬅️ main画面へ戻る", use_container_width=True):
@@ -40,25 +52,23 @@ with cols_top[1]:
                 if hasattr(st, "switch_page"):
                     st.switch_page("main.py")
                 else:
-                    st.experimental_set_query_params()  # ?page をクリア
+                    st.experimental_set_query_params()
                     st.experimental_rerun()
             except Exception:
                 pass
 
 # DB 準備
 conn = get_conn()
-ensure_users_table(conn)
-me = get_current_user()
+auth.ensure_users_table(conn)
 
 # ユーザー一覧
-rows = list_users(conn)  # [(id, username, role, created_at), ...]
+rows = auth.list_users(conn)  # [(id, username, role, created_at), ...]
 df = pd.DataFrame(rows, columns=["id", "username", "role", "created_at"]) if rows else pd.DataFrame(columns=["id","username","role","created_at"])
 
 st.subheader("👥 ユーザー一覧")
 if df.empty:
     st.info("ユーザーがいません。まずは『ユーザー追加』から作成してください。")
 else:
-    # 簡易フィルタ
     with st.expander("🔎 フィルタ", expanded=False):
         q = st.text_input("ユーザー名で絞り込み（部分一致）", value="", key="user_filter_q")
         role_pick = st.selectbox("ロールで絞り込み", ("すべて", "admin", "user"), key="user_filter_role")
@@ -70,8 +80,6 @@ else:
     st.dataframe(view.sort_values(["id"]), use_container_width=True, height=280)
 
 st.markdown("---")
-
-# 2カラム：左=ユーザー追加、右=既存ユーザー管理
 col_add, col_edit = st.columns(2)
 
 # ➊ ユーザー追加
@@ -89,7 +97,7 @@ with col_add:
         elif new_p1 != new_p2:
             st.error("確認用パスワードが一致しません。")
         else:
-            ok, msg = create_user(conn, new_u, new_p1, role=new_role)
+            ok, msg = auth.create_user(conn, new_u, new_p1, role=new_role)
             (st.success if ok else st.error)(msg)
             if ok:
                 try: st.rerun()
@@ -97,17 +105,15 @@ with col_add:
                     try: st.experimental_rerun()
                     except Exception: pass
 
-# ➋ 既存ユーザー管理（編集・PWリセット・削除）
+# ➋ 既存ユーザー管理
 with col_edit:
     st.subheader("🛠️ 既存ユーザー管理")
 
     if df.empty:
         st.info("ユーザーがいません。")
     else:
-        # 選択肢（id: username (role)）
         options = [f"{int(r.id)}: {r.username} ({r.role})" for _, r in df.sort_values("id").iterrows()]
         pick = st.selectbox("対象ユーザーを選択", options, key="edit_user_pick")
-        # 取り出し
         sel_id = int(pick.split(":")[0]) if pick else None
         sel_row = df[df["id"] == sel_id].iloc[0] if sel_id in df["id"].values else None
 
@@ -119,7 +125,7 @@ with col_edit:
                 new_name = st.text_input("新しいユーザー名", value=sel_row.username, key="edit_username_value")
                 ok_uname = st.form_submit_button("✏️ ユーザー名を変更", use_container_width=True)
             if ok_uname:
-                ok, msg = change_username(conn, user_id=int(sel_row.id), new_username=new_name)
+                ok, msg = auth.change_username(conn, user_id=int(sel_row.id), new_username=new_name)
                 (st.success if ok else st.error)(msg)
                 if ok:
                     try: st.rerun()
@@ -129,7 +135,7 @@ with col_edit:
 
             st.markdown("")
 
-            # b) ロール変更（ページ内で直接UPDATE）
+            # b) ロール変更
             with st.form("edit_role"):
                 role_new = st.selectbox("ロールを変更", ["user", "admin"], index=0 if sel_row.role == "user" else 1, key="edit_role_value")
                 ok_role = st.form_submit_button("🔁 ロールを変更", use_container_width=True)
@@ -147,7 +153,7 @@ with col_edit:
 
             st.markdown("")
 
-            # c) パスワードリセット（管理者が強制）
+            # c) パスワードリセット（管理者）
             with st.form("reset_pw"):
                 pw1 = st.text_input("新しいパスワード", type="password", key="reset_pw1")
                 pw2 = st.text_input("新しいパスワード（確認）", type="password", key="reset_pw2")
@@ -156,7 +162,7 @@ with col_edit:
                 if pw1 != pw2:
                     st.error("確認用パスワードが一致しません。")
                 else:
-                    ok, msg = admin_set_password(conn, int(sel_row.id), pw1)
+                    ok, msg = auth.admin_set_password(conn, int(sel_row.id), pw1)
                     (st.success if ok else st.error)(msg)
 
             st.markdown("")
@@ -168,7 +174,7 @@ with col_edit:
                 ok_del = st.form_submit_button("🗑️ ユーザーを削除", use_container_width=True)
             if ok_del:
                 if confirm_txt.strip() == f"DELETE {int(sel_row.id)}":
-                    ok, msg = admin_delete_user(conn, int(sel_row.id), acting_user_id=int(me["id"]))
+                    ok, msg = auth.admin_delete_user(conn, int(sel_row.id), acting_user_id=int(me["id"]))
                     (st.success if ok else st.error)(msg)
                     if ok:
                         try: st.rerun()
