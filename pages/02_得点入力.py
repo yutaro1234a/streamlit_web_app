@@ -1,3 +1,4 @@
+# pages/02_得点入力.py
 import streamlit as st
 from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
 
@@ -20,6 +21,7 @@ st.set_page_config(
 
 import time
 import pandas as pd
+from pathlib import Path
 
 from lib_db import (
     get_conn, inject_css, inject_mobile_big_ui, load_players, notify,
@@ -31,23 +33,10 @@ inject_mobile_big_ui()
 inject_touch_ui_css()
 inject_compact_pick_css()
 
-# どのバージョンでも動くリロード（必要時）
-def safe_rerun():
-    try:
-        st.rerun()
-    except Exception:
-        try:
-            st.experimental_rerun()
-        except Exception:
-            try:
-                st.toast("🔄 画面を更新してください（ブラウザの再読み込み）", icon="🔄")
-            except Exception:
-                st.warning("🔄 画面を更新してください（Ctrl/Cmd + R）")
-
-# DB / データ
-conn = get_conn()
-st.cache_data.clear()  # ← プレイヤーキャッシュをリセット！
-players_df = load_players()
+# 共通: 選手CSVの更新時間をキャッシュキーにすることで再読み込みを可能に
+csv_path = Path("players.csv")
+csv_mtime = csv_path.stat().st_mtime if csv_path.exists() else 0
+players_df = load_players(updated_at=csv_mtime)
 
 # 🔧 表示列を追加（背番号 - 名前 - ビブス）
 players_df["表示"] = players_df.apply(
@@ -57,7 +46,7 @@ players_df["表示"] = players_df.apply(
 st.session_state.setdefault("last_action_ts", 0)
 
 st.title("🏀SCORE")
-red_pts, blue_pts = get_score_red_blue(conn)
+red_pts, blue_pts = get_score_red_blue(get_conn())
 st.markdown(f"""
 <div class="scorebar">
   <div class="scorebox">
@@ -110,7 +99,7 @@ def add_score(action_label: str):
     if uniformNumber == "--":
         st.error("選手が未選択です。")
         return
-    _ = add_event_sql(conn, classType, team, bibsType, uniformNumber, playerName, action_label, quarter)
+    _ = add_event_sql(get_conn(), classType, team, bibsType, uniformNumber, playerName, action_label, quarter)
     st.session_state.last_action_ts = now
     notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
@@ -126,7 +115,7 @@ with c3:
 st.markdown("---")
 with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=False):
     N = st.number_input("表示件数", min_value=5, max_value=200, value=20, step=5, key="score_recent_n")
-    recent = read_recent_df(conn, n=int(N))
+    recent = read_recent_df(get_conn(), n=int(N))
 
     if recent.empty or "得点・アシスト" not in recent.columns:
         st.info("表示できるデータがありません。")
@@ -169,9 +158,9 @@ with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=Fal
 
                 del_ids = edited.loc[edited.get("削除", False) == True, "id"].astype(int).tolist() if "id" in edited.columns else []
                 if del_ids:
-                    delete_events_by_ids(conn, del_ids)
+                    delete_events_by_ids(get_conn(), del_ids)
                     st.success(f"{len(del_ids)} 件を削除しました。")
-                    safe_rerun()
+                    st.rerun()
             else:
                 df_edit = recent.copy()
                 df_edit['削除'] = False
@@ -179,9 +168,9 @@ with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=Fal
                 del_ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist() if 'id' in edited.columns else []
                 if st.button("🗑️ チェックした行を削除", type="primary", use_container_width=True, key="score_del_btn_fb"):
                     if del_ids:
-                        delete_events_by_ids(conn, del_ids)
+                        delete_events_by_ids(get_conn(), del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
-                        safe_rerun()
+                        st.rerun()
                     else:
                         st.warning("削除対象が選ばれていません。")
 

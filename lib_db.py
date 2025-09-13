@@ -14,7 +14,7 @@ POINT_MAP = {'3pt':3, '2pt':2, '1pt':1}
 STAT_SET  = {'アシスト','ブロック','リバウンド','スティール'}
 FOUL_SET  = {'ファール','ターンオーバー'}
 
-# 共有CSS
+# 共通CSS
 def inject_css():
     st.markdown("""
     <style>
@@ -54,25 +54,21 @@ def get_conn() -> sqlite3.Connection:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_events_time ON events(created_at)")
     return conn
 
-# ✅ プレイヤー読み込み：表示列を追加
+# ✅ CSVの更新を反映させるキャッシュ対応済みプレイヤー読み込み
 @st.cache_data
-def load_players() -> pd.DataFrame:
+def load_players(updated_at=None) -> pd.DataFrame:
     p = Path(PLAYER_CSV)
     if not p.exists():
         return pd.DataFrame(columns=['CLASS','TEAM','背番号','プレイヤー名','ビブスType','表示'])
     df = pd.read_csv(p, dtype=str)
-
-    # 欠損カラムの補完
     for c in ['CLASS','TEAM','背番号','プレイヤー名','ビブスType']:
-        if c not in df.columns: df[c] = ''
+        if c not in df.columns:
+            df[c] = ''
     df['背番号'] = df['背番号'].astype(str)
-
-    # ✅ 表示列を生成：「12 - 山田太郎 - SPALDING」
-    df["表示"] = df.apply(lambda row: f"{row['背番号']} - {row['プレイヤー名']} - {row['ビブスType']}", axis=1)
-
+    df['表示'] = df['背番号'] + ' - ' + df['プレイヤー名'] + '（' + df['ビブスType'] + '）'
     return df
 
-# 通知
+# 通知（古い環境でもOK）
 def notify(msg: str, icon: str = "✅"):
     if hasattr(st, "toast"):
         st.toast(msg, icon=icon)
@@ -94,7 +90,8 @@ def delete_event_by_id(conn, row_id: int):
     conn.commit()
 
 def delete_events_by_ids(conn, ids):
-    if not ids: return
+    if not ids:
+        return
     placeholders = ",".join(["?"] * len(ids))
     conn.execute(f"DELETE FROM events WHERE id IN ({placeholders})", ids)
     conn.commit()
@@ -149,15 +146,18 @@ def wipe_all_data(conn):
 
 def get_score_red_blue(conn):
     df = read_df_sql(conn)
-    if df.empty: return (0, 0)
+    if df.empty:
+        return (0, 0)
     score_df = df[df['得点・アシスト'].isin(POINT_MAP.keys())].copy()
-    if score_df.empty: return (0, 0)
+    if score_df.empty:
+        return (0, 0)
     score_df['得点'] = score_df['得点・アシスト'].map(POINT_MAP)
     gp = score_df.groupby('TEAM', as_index=False)['得点'].sum()
-    red = int(gp.loc[gp['TEAM']=='Red',  '得点'].sum()) if 'Red'  in gp['TEAM'].values else 0
-    blue= int(gp.loc[gp['TEAM']=='Blue', '得点'].sum()) if 'Blue' in gp['TEAM'].values else 0
+    red = int(gp.loc[gp['TEAM'] == 'Red', '得点'].sum()) if 'Red' in gp['TEAM'].values else 0
+    blue = int(gp.loc[gp['TEAM'] == 'Blue', '得点'].sum()) if 'Blue' in gp['TEAM'].values else 0
     return (red, blue)
 
+# モバイル向けUI最適化CSS
 def inject_mobile_big_ui():
     st.markdown("""
     <style>
