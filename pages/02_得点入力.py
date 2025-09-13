@@ -1,4 +1,3 @@
-# pages/02_得点入力.py
 import streamlit as st
 from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
 
@@ -10,43 +9,42 @@ from lib_db import (
 
 from app_auth import require_login, render_userbox
 
+from pathlib import Path
+import time
+import pandas as pd
+
+# --- 必須認証系 ---
 require_login()
 render_userbox()
 
+# --- ページ設定 ---
 st.set_page_config(
     page_title="🏀SCORE INPUT",
     layout="centered",
     initial_sidebar_state="expanded",
 )
 
-import time
-import pandas as pd
-from pathlib import Path
-
-from lib_db import (
-    get_conn, inject_css, inject_mobile_big_ui, load_players, notify,
-    add_event_sql, get_score_red_blue, read_recent_df
-)
-
+# --- CSS & UI 拡張 ---
 inject_css()
 inject_mobile_big_ui()
 inject_touch_ui_css()
 inject_compact_pick_css()
 
-# 共通: 選手CSVの更新時間をキャッシュキーにすることで再読み込みを可能に
+# --- DB & プレイヤー情報取得（キャッシュ強制更新付き） ---
+conn = get_conn()
 csv_path = Path("players.csv")
-csv_mtime = csv_path.stat().st_mtime if csv_path.exists() else 0
+csv_mtime = csv_path.stat().st_mtime if csv_path.exists() else None
 players_df = load_players(updated_at=csv_mtime)
 
-# 🔧 表示列を追加（背番号 - 名前 - ビブス）
-players_df["表示"] = players_df.apply(
-    lambda row: f"{row['背番号']} - {row['プレイヤー名']} - {row['ビブスType']}", axis=1
-)
+# 表示列（選手セレクト用）
+players_df["表示"] = players_df["背番号"] + " - " + players_df["プレイヤー名"] + " - " + players_df["ビブスType"]
 
+# --- 状態初期化 ---
 st.session_state.setdefault("last_action_ts", 0)
 
+# --- タイトル & スコアバー ---
 st.title("🏀SCORE")
-red_pts, blue_pts = get_score_red_blue(get_conn())
+red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">
   <div class="scorebox">
@@ -59,24 +57,26 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# --- CLASS / TEAM ---
 row1_left, row1_right = st.columns(2)
 with row1_left:
     class_opts = ["初級", "中級", "上級"]
     classType = radio_compact("🚀 CLASS", class_opts, key="score_class_radio_compact",
-                              index=class_opts.index(st.session_state.get("score_class_radio_compact",
-                                                                          st.session_state.get("score_class_radio", "初級"))))
+        index=class_opts.index(st.session_state.get("score_class_radio_compact", "初級")))
+
 with row1_right:
     team_opts_lbl = ["🔴 Red", "🔵 Blue"]
-    team_lbl = radio_compact("🟥 TEAM", team_opts_lbl, key="score_team_radio_compact",
-                             index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
+    team_lbl = radio_compact("🔝 TEAM", team_opts_lbl, key="score_team_radio_compact",
+        index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
     team = "Red" if "Red" in team_lbl else "Blue"
 
+# --- Quarter / Player ---
 row2_left, row2_right = st.columns([1, 2])
 with row2_left:
     q_opts = ["Q1", "Q2", "Q3", "Q4", "OT"]
     quarter = radio_compact("⏱️ Quarter", q_opts, key="score_quarter_radio_compact",
-                             index=q_opts.index(st.session_state.get("score_quarter_radio_compact",
-                                                                     st.session_state.get("score_quarter_select", "Q1"))))
+        index=q_opts.index(st.session_state.get("score_quarter_radio_compact", "Q1")))
+
 with row2_right:
     filtered = players_df[(players_df["CLASS"] == classType) & (players_df["TEAM"] == team)].copy()
     if not filtered.empty:
@@ -87,11 +87,16 @@ with row2_right:
             key="score_player_select"
         )
         row = filtered[filtered["表示"] == selected_player].iloc[0]
-        uniformNumber = row["背番号"]; playerName = row["プレイヤー名"]; bibsType = row["ビブスType"]
+        uniformNumber = row["背番号"]
+        playerName = row["プレイヤー名"]
+        bibsType = row["ビブスType"]
     else:
         st.warning(f"CLASS={classType} / TEAM={team} の選手がいません。先に選手登録をご確認ください。")
-        uniformNumber = "--"; playerName = ""; bibsType = ""
+        uniformNumber = "--"
+        playerName = ""
+        bibsType = ""
 
+# --- スコア登録関数 ---
 def add_score(action_label: str):
     now = time.time()
     if now - st.session_state.last_action_ts < 0.35:
@@ -99,10 +104,11 @@ def add_score(action_label: str):
     if uniformNumber == "--":
         st.error("選手が未選択です。")
         return
-    _ = add_event_sql(get_conn(), classType, team, bibsType, uniformNumber, playerName, action_label, quarter)
+    _ = add_event_sql(conn, classType, team, bibsType, uniformNumber, playerName, action_label, quarter)
     st.session_state.last_action_ts = now
     notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
+# --- スコアボタン ---
 st.caption("タップで登録")
 c1, c2, c3 = st.columns(3)
 with c1:
@@ -112,10 +118,11 @@ with c2:
 with c3:
     st.button("🏀 1pt", on_click=add_score, args=("1pt",), use_container_width=True)
 
+# --- 直近ログ ---
 st.markdown("---")
 with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=False):
     N = st.number_input("表示件数", min_value=5, max_value=200, value=20, step=5, key="score_recent_n")
-    recent = read_recent_df(get_conn(), n=int(N))
+    recent = read_recent_df(conn, n=int(N))
 
     if recent.empty or "得点・アシスト" not in recent.columns:
         st.info("表示できるデータがありません。")
@@ -158,7 +165,7 @@ with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=Fal
 
                 del_ids = edited.loc[edited.get("削除", False) == True, "id"].astype(int).tolist() if "id" in edited.columns else []
                 if del_ids:
-                    delete_events_by_ids(get_conn(), del_ids)
+                    delete_events_by_ids(conn, del_ids)
                     st.success(f"{len(del_ids)} 件を削除しました。")
                     st.rerun()
             else:
@@ -168,12 +175,13 @@ with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=Fal
                 del_ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist() if 'id' in edited.columns else []
                 if st.button("🗑️ チェックした行を削除", type="primary", use_container_width=True, key="score_del_btn_fb"):
                     if del_ids:
-                        delete_events_by_ids(get_conn(), del_ids)
+                        delete_events_by_ids(conn, del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
                         st.rerun()
                     else:
                         st.warning("削除対象が選ばれていません。")
 
+# --- ナビゲーション ---
 st.markdown("---")
 if hasattr(st, "page_link"):
     cols_nav = st.columns(2)
