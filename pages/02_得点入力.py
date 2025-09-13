@@ -1,13 +1,13 @@
-# pages/02_得点入力.py
+# ---------- 02_得点入力.py ----------
 import streamlit as st
+import time
+import pandas as pd
+from pathlib import Path
 from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
-
 from lib_db import (
     get_conn, inject_css, inject_mobile_big_ui, load_players, notify,
-    add_event_sql, get_score_red_blue, read_recent_df,
-    delete_events_by_ids,
+    add_event_sql, get_score_red_blue, read_recent_df, delete_events_by_ids,
 )
-
 from app_auth import require_login, render_userbox
 
 require_login()
@@ -18,10 +18,6 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
 )
-
-import time
-import pandas as pd
-from pathlib import Path
 
 inject_css()
 inject_mobile_big_ui()
@@ -35,16 +31,12 @@ def safe_rerun():
         try:
             st.experimental_rerun()
         except Exception:
-            try:
-                st.toast("🔄 画面を更新してください（ブラウザの再読み込み）", icon="🔄")
-            except Exception:
-                st.warning("🔄 画面を更新してください（Ctrl/Cmd + R）")
+            st.warning("🔄 手動で画面を更新してください（Ctrl+R / Cmd+R）")
 
+# DB / データ
 conn = get_conn()
-
-# CSVファイルの更新時刻をキャッシュのキーに使う
-csv_path = Path("players.csv")
-csv_mtime = csv_path.stat().st_mtime if csv_path.exists() else 0
+player_csv_path = Path("players.csv")
+csv_mtime = player_csv_path.stat().st_mtime if player_csv_path.exists() else 0
 players_df = load_players(updated_at=csv_mtime)
 
 st.session_state.setdefault("last_action_ts", 0)
@@ -67,29 +59,25 @@ row1_left, row1_right = st.columns(2)
 with row1_left:
     class_opts = ["初級", "中級", "上級"]
     classType = radio_compact("🚀 CLASS", class_opts, key="score_class_radio_compact",
-                              index=class_opts.index(st.session_state.get("score_class_radio_compact",
-                                                                          st.session_state.get("score_class_radio", "初級"))))
+        index=class_opts.index(st.session_state.get("score_class_radio_compact",
+                                                   st.session_state.get("score_class_radio", "初級"))))
 with row1_right:
     team_opts_lbl = ["🔴 Red", "🔵 Blue"]
     team_lbl = radio_compact("🟥 TEAM", team_opts_lbl, key="score_team_radio_compact",
-                             index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
+        index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
     team = "Red" if "Red" in team_lbl else "Blue"
 
 row2_left, row2_right = st.columns([1, 2])
 with row2_left:
     q_opts = ["Q1", "Q2", "Q3", "Q4", "OT"]
     quarter = radio_compact("⏱️ Quarter", q_opts, key="score_quarter_radio_compact",
-                             index=q_opts.index(st.session_state.get("score_quarter_radio_compact",
-                                                                     st.session_state.get("score_quarter_select", "Q1"))))
+        index=q_opts.index(st.session_state.get("score_quarter_radio_compact",
+                                               st.session_state.get("score_quarter_select", "Q1"))))
 with row2_right:
     filtered = players_df[(players_df["CLASS"] == classType) & (players_df["TEAM"] == team)].copy()
     if not filtered.empty:
         display_options = filtered["表示"].tolist()
-        selected_player = st.selectbox(
-            "⛹️‍♂️ 選手（背番号 - 名前 - ビブス）",
-            display_options,
-            key="score_player_select"
-        )
+        selected_player = st.selectbox("⛹️‍♂️ 選手（背番号 - 名前 - ビブス）", display_options, key="score_player_select")
         row = filtered[filtered["表示"] == selected_player].iloc[0]
         uniformNumber = row["背番号"]
         playerName = row["プレイヤー名"]
