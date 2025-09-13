@@ -1,3 +1,4 @@
+# pages/02_得点入力.py
 import streamlit as st
 from ui_components import inject_touch_ui_css, inject_compact_pick_css, radio_compact
 
@@ -9,40 +10,45 @@ from lib_db import (
 
 from app_auth import require_login, render_userbox
 
-from pathlib import Path
-import time
-import pandas as pd
-
-# --- 必須認証系 ---
 require_login()
 render_userbox()
 
-# --- ページ設定 ---
 st.set_page_config(
     page_title="🏀SCORE INPUT",
     layout="centered",
     initial_sidebar_state="expanded",
 )
 
-# --- CSS & UI 拡張 ---
+import time
+import pandas as pd
+from pathlib import Path
+
 inject_css()
 inject_mobile_big_ui()
 inject_touch_ui_css()
 inject_compact_pick_css()
 
-# --- DB & プレイヤー情報取得（キャッシュ強制更新付き） ---
+def safe_rerun():
+    try:
+        st.rerun()
+    except Exception:
+        try:
+            st.experimental_rerun()
+        except Exception:
+            try:
+                st.toast("🔄 画面を更新してください（ブラウザの再読み込み）", icon="🔄")
+            except Exception:
+                st.warning("🔄 画面を更新してください（Ctrl/Cmd + R）")
+
 conn = get_conn()
+
+# CSVファイルの更新時刻をキャッシュのキーに使う
 csv_path = Path("players.csv")
-csv_mtime = csv_path.stat().st_mtime if csv_path.exists() else None
+csv_mtime = csv_path.stat().st_mtime if csv_path.exists() else 0
 players_df = load_players(updated_at=csv_mtime)
 
-# 表示列（選手セレクト用）
-players_df["表示"] = players_df["背番号"] + " - " + players_df["プレイヤー名"] + " - " + players_df["ビブスType"]
-
-# --- 状態初期化 ---
 st.session_state.setdefault("last_action_ts", 0)
 
-# --- タイトル & スコアバー ---
 st.title("🏀SCORE")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
@@ -57,26 +63,24 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- CLASS / TEAM ---
 row1_left, row1_right = st.columns(2)
 with row1_left:
     class_opts = ["初級", "中級", "上級"]
     classType = radio_compact("🚀 CLASS", class_opts, key="score_class_radio_compact",
-        index=class_opts.index(st.session_state.get("score_class_radio_compact", "初級")))
-
+                              index=class_opts.index(st.session_state.get("score_class_radio_compact",
+                                                                          st.session_state.get("score_class_radio", "初級"))))
 with row1_right:
     team_opts_lbl = ["🔴 Red", "🔵 Blue"]
-    team_lbl = radio_compact("🔝 TEAM", team_opts_lbl, key="score_team_radio_compact",
-        index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
+    team_lbl = radio_compact("🟥 TEAM", team_opts_lbl, key="score_team_radio_compact",
+                             index=0 if st.session_state.get("score_team_radio", "Red") == "Red" else 1)
     team = "Red" if "Red" in team_lbl else "Blue"
 
-# --- Quarter / Player ---
 row2_left, row2_right = st.columns([1, 2])
 with row2_left:
     q_opts = ["Q1", "Q2", "Q3", "Q4", "OT"]
     quarter = radio_compact("⏱️ Quarter", q_opts, key="score_quarter_radio_compact",
-        index=q_opts.index(st.session_state.get("score_quarter_radio_compact", "Q1")))
-
+                             index=q_opts.index(st.session_state.get("score_quarter_radio_compact",
+                                                                     st.session_state.get("score_quarter_select", "Q1"))))
 with row2_right:
     filtered = players_df[(players_df["CLASS"] == classType) & (players_df["TEAM"] == team)].copy()
     if not filtered.empty:
@@ -92,11 +96,8 @@ with row2_right:
         bibsType = row["ビブスType"]
     else:
         st.warning(f"CLASS={classType} / TEAM={team} の選手がいません。先に選手登録をご確認ください。")
-        uniformNumber = "--"
-        playerName = ""
-        bibsType = ""
+        uniformNumber = "--"; playerName = ""; bibsType = ""
 
-# --- スコア登録関数 ---
 def add_score(action_label: str):
     now = time.time()
     if now - st.session_state.last_action_ts < 0.35:
@@ -108,7 +109,6 @@ def add_score(action_label: str):
     st.session_state.last_action_ts = now
     notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
-# --- スコアボタン ---
 st.caption("タップで登録")
 c1, c2, c3 = st.columns(3)
 with c1:
@@ -118,7 +118,6 @@ with c2:
 with c3:
     st.button("🏀 1pt", on_click=add_score, args=("1pt",), use_container_width=True)
 
-# --- 直近ログ ---
 st.markdown("---")
 with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=False):
     N = st.number_input("表示件数", min_value=5, max_value=200, value=20, step=5, key="score_recent_n")
@@ -167,7 +166,7 @@ with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=Fal
                 if del_ids:
                     delete_events_by_ids(conn, del_ids)
                     st.success(f"{len(del_ids)} 件を削除しました。")
-                    st.rerun()
+                    safe_rerun()
             else:
                 df_edit = recent.copy()
                 df_edit['削除'] = False
@@ -177,11 +176,10 @@ with st.expander("📋 直近ログ（得点のみ・削除可）", expanded=Fal
                     if del_ids:
                         delete_events_by_ids(conn, del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
-                        st.rerun()
+                        safe_rerun()
                     else:
                         st.warning("削除対象が選ばれていません。")
 
-# --- ナビゲーション ---
 st.markdown("---")
 if hasattr(st, "page_link"):
     cols_nav = st.columns(2)

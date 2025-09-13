@@ -1,10 +1,8 @@
-# lib_db.py
 import sqlite3
 import pandas as pd
 from pathlib import Path
 import time
 import streamlit as st
-import os
 
 # 定数
 PLAYER_CSV = 'players.csv'
@@ -33,27 +31,6 @@ def inject_css():
     </style>
     """, unsafe_allow_html=True)
 
-# CSV更新でキャッシュを無効化する
-@st.cache_data
-def load_players(updated_at=None) -> pd.DataFrame:
-    p = Path(PLAYER_CSV)
-    if not p.exists():
-        return pd.DataFrame(columns=['CLASS','TEAM','背番号','プレイヤー名','ビブスType','表示'])
-    df = pd.read_csv(p, dtype=str)
-    for c in ['CLASS','TEAM','背番号','プレイヤー名','ビブスType']:
-        if c not in df.columns: df[c] = ''
-    df['背番号'] = df['背番号'].astype(str)
-    df['表示'] = df['背番号'] + ' - ' + df['プレイヤー名'] + '（' + df['ビブスType'] + '）'
-    return df
-
-# 通知
-def notify(msg: str, icon: str = "✅"):
-    if hasattr(st, "toast"):
-        st.toast(msg, icon=icon)
-    else:
-        st.success(msg)
-
-# DB接続
 @st.cache_resource
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -77,7 +54,27 @@ def get_conn() -> sqlite3.Connection:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_events_time ON events(created_at)")
     return conn
 
-# イベント追加
+# プレイヤー読み込み
+@st.cache_data
+def load_players(updated_at=0) -> pd.DataFrame:
+    p = Path(PLAYER_CSV)
+    if not p.exists():
+        return pd.DataFrame(columns=['CLASS','TEAM','背番号','プレイヤー名','ビブスType','表示'])
+    df = pd.read_csv(p, dtype=str)
+    for c in ['CLASS','TEAM','背番号','プレイヤー名','ビブスType']:
+        if c not in df.columns: df[c] = ''
+    df['背番号'] = df['背番号'].astype(str)
+    df['表示'] = df['背番号'] + ' - ' + df['プレイヤー名'] + ' - ' + df['ビブスType']
+    return df
+
+# 通知（古い環境でもOK）
+def notify(msg: str, icon: str = "✅"):
+    if hasattr(st, "toast"):
+        st.toast(msg, icon=icon)
+    else:
+        st.success(msg)
+
+# CRUD / IO
 def add_event_sql(conn, classType, team, bibsType, uniformNumber, playerName, action_label, quarter):
     cur = conn.cursor()
     cur.execute(
@@ -92,7 +89,10 @@ def delete_event_by_id(conn, row_id: int):
     conn.commit()
 
 def delete_events_by_ids(conn, ids):
-    if not ids: return
+    if not ids:
+        return
+    if isinstance(ids, int):
+        ids = [ids]
     placeholders = ",".join(["?"] * len(ids))
     conn.execute(f"DELETE FROM events WHERE id IN ({placeholders})", ids)
     conn.commit()
@@ -147,16 +147,17 @@ def wipe_all_data(conn):
 
 def get_score_red_blue(conn):
     df = read_df_sql(conn)
-    if df.empty: return (0, 0)
+    if df.empty:
+        return (0, 0)
     score_df = df[df['得点・アシスト'].isin(POINT_MAP.keys())].copy()
-    if score_df.empty: return (0, 0)
+    if score_df.empty:
+        return (0, 0)
     score_df['得点'] = score_df['得点・アシスト'].map(POINT_MAP)
     gp = score_df.groupby('TEAM', as_index=False)['得点'].sum()
     red = int(gp.loc[gp['TEAM']=='Red',  '得点'].sum()) if 'Red'  in gp['TEAM'].values else 0
     blue= int(gp.loc[gp['TEAM']=='Blue', '得点'].sum()) if 'Blue' in gp['TEAM'].values else 0
     return (red, blue)
 
-# モバイル用UI強化
 def inject_mobile_big_ui():
     st.markdown("""
     <style>
