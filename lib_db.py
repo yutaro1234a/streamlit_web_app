@@ -1,4 +1,3 @@
-# lib_db.py
 import sqlite3
 import pandas as pd
 from pathlib import Path
@@ -55,20 +54,25 @@ def get_conn() -> sqlite3.Connection:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_events_time ON events(created_at)")
     return conn
 
-# プレイヤー読み込み
-@st.cache_resource
+# ✅ プレイヤー読み込み：表示列を追加
+@st.cache_data
 def load_players() -> pd.DataFrame:
     p = Path(PLAYER_CSV)
     if not p.exists():
         return pd.DataFrame(columns=['CLASS','TEAM','背番号','プレイヤー名','ビブスType','表示'])
     df = pd.read_csv(p, dtype=str)
+
+    # 欠損カラムの補完
     for c in ['CLASS','TEAM','背番号','プレイヤー名','ビブスType']:
         if c not in df.columns: df[c] = ''
     df['背番号'] = df['背番号'].astype(str)
-    df['表示'] = df['背番号'] + ' - ' + df['プレイヤー名'] + '（' + df['ビブスType'] + '）'
+
+    # ✅ 表示列を生成：「12 - 山田太郎 - SPALDING」
+    df["表示"] = df.apply(lambda row: f"{row['背番号']} - {row['プレイヤー名']} - {row['ビブスType']}", axis=1)
+
     return df
 
-# 通知（古い環境でもOK）
+# 通知
 def notify(msg: str, icon: str = "✅"):
     if hasattr(st, "toast"):
         st.toast(msg, icon=icon)
@@ -154,12 +158,9 @@ def get_score_red_blue(conn):
     blue= int(gp.loc[gp['TEAM']=='Blue', '得点'].sum()) if 'Blue' in gp['TEAM'].values else 0
     return (red, blue)
 
-# lib_db.py に追記
 def inject_mobile_big_ui():
-    """スマホ向け：ボタン/リンク/テキストを大きく＆タッチターゲット拡大"""
     st.markdown("""
     <style>
-    /* ボタンをデカく＆横幅いっぱいに */
     .stButton > button {
       width: 100%;
       height: 88px;
@@ -168,7 +169,6 @@ def inject_mobile_big_ui():
       border-radius: 18px;
       padding: 16px 20px;
     }
-    /* LinkButton もデカく */
     a[data-testid="stLinkButton"] {
       display: block;
       text-align: center;
@@ -178,17 +178,10 @@ def inject_mobile_big_ui():
       font-weight: 700;
       text-decoration: none !important;
     }
-    /* スコアチップ少し大きく */
     .scorechip { font-size: 18px; padding: 8px 16px; }
-
-    /* セレクト/ラジオの可読性UP（軽め） */
     label { font-size: 18px !important; }
     div[role="radiogroup"] label { margin-right: 10px; }
-
-    /* データフレームの文字をやや大きく */
     div[data-testid="stDataFrame"] * { font-size: 15px; }
-
-    /* 余白をスマホ寄せに */
     @media (max-width: 640px){
       .block-container { padding-left: 0.6rem; padding-right: 0.6rem; }
       .stButton > button { height: 96px; font-size: 24px; }

@@ -84,7 +84,7 @@ if submit:
     if uniform_number and player_name:
         save_player(uniform_number, player_name, team, bibs_type, class_type)
         st.success(f"🎉 選手 {player_name}（背番号: {uniform_number}）を登録しました！")
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.warning("⚠️ 背番号とプレイヤー名は必須です")
 
@@ -115,7 +115,7 @@ if os.path.exists(PLAYER_CSV):
             )]
             df.to_csv(PLAYER_CSV, index=False)
             st.success(f"✅ 選手 {name}（背番号: {num}）を削除しました！")
-            st.experimental_rerun()
+            st.rerun()
         except Exception as e:
             st.error(f"❌ 削除時にエラーが発生しました: {e}")
 else:
