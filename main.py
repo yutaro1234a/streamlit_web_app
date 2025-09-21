@@ -3,59 +3,69 @@ import streamlit as st
 
 from app_auth import require_login, render_userbox
 
-require_login()     # ← 未ログインならログインへ誘導して stop
-render_userbox()    # ← サイドバーに「ログイン中」「ログアウト」表示
+require_login()
+render_userbox()
 
-# ★ 最初に1回だけ
 st.set_page_config(
-    page_title="🏀RUNNING SCORE",
+    page_title="\U0001F3C0RUNNING SCORE",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
 import pandas as pd
 import time
+import sqlite3
 import streamlit.components.v1 as components
 
 from lib_db import (
-    get_conn, inject_css, inject_mobile_big_ui, load_players, notify,
+    get_conn, inject_css, inject_mobile_big_ui, notify,
     add_event_sql, delete_event_by_id, delete_events_by_ids,
     read_df_sql, read_recent_df, export_events_csv, backup_sqlite,
     wipe_all_data, get_score_red_blue, POINT_MAP, STAT_SET, FOUL_SET
 )
 
-# ★ set_page_config の後で1回だけ呼ぶ
 inject_css()
 inject_mobile_big_ui()
 
-# ✅ どのバージョンでも動く「安全リロード」
+DB_PATH = 'players.db'
+
+def load_players_from_sqlite():
+    with sqlite3.connect(DB_PATH) as conn:
+        df = pd.read_sql_query("SELECT * FROM players", conn)
+    df["表示"] = df.apply(lambda row: f"{row['uniform_number']} - {row['player_name']} - {row['bibs_type']}", axis=1)
+    df.rename(columns={
+        "uniform_number": "背番号",
+        "player_name": "プレイヤー名",
+        "team": "TEAM",
+        "bibs_type": "ビブスType",
+        "class_type": "CLASS"
+    }, inplace=True)
+    return df
+
 def safe_rerun():
     try:
-        st.rerun()  # 新しめ（正式API）
+        st.rerun()
     except Exception:
         try:
-            st.experimental_rerun()  # 古め（experimental）
+            st.experimental_rerun()
         except Exception:
             try:
-                st.toast("🔄 画面を更新してください（ブラウザの再読み込み）", icon="🔄")
+                st.toast("\U0001F504 画面を更新してください（ブラウザの再読み込み）", icon="\U0001F504")
             except Exception:
-                st.warning("🔄 画面を更新してください（Ctrl/Cmd + R）")
+                st.warning("\U0001F504 画面を更新してください（Ctrl/Cmd + R）")
 
-# ↓↓↓ ここから本体処理 ↓↓↓
 conn = get_conn()
-players_df = load_players()
+players_df = load_players_from_sqlite()
 
-# 状態
 st.session_state.setdefault("last_insert_id", None)
 st.session_state.setdefault("last_action_ts", 0)
 
-# タイトル & 固定バー
-st.title("🏀RUNNING SCORE")
+st.title("\U0001F3C0RUNNING SCORE")
 red_pts, blue_pts = get_score_red_blue(conn)
 st.markdown(f"""
 <div class="scorebar">
   <div class="scorebox">
-    <div class="info">📊TOTAL SCORE</div>
+    <div class="info">\U0001F4CA TOTAL SCORE</div>
     <div>
       <span class="scorechip red">Red: {red_pts}</span>
       <span class="scorechip blue">Blue: {blue_pts}</span>
@@ -64,16 +74,14 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# 入力UI
-classType = st.radio('🚀 CLASS', ('初級','中級','上級'), horizontal=True, key="class_radio")
-team      = st.radio('🟥 TEAM',  ('Red','Blue'), horizontal=True, key="team_radio")
-quarter   = st.selectbox('⏱️ Quarter', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
-
+classType = st.radio('\U0001F680 CLASS', ('初級','中級','上級'), horizontal=True, key="class_radio")
+team      = st.radio('\U0001F1EA TEAM',  ('Red','Blue'), horizontal=True, key="team_radio")
+quarter   = st.selectbox('\u23F1\uFE0F Quarter', ('Q1','Q2','Q3','Q4','OT'), key="quarter_select")
 
 filtered = players_df[(players_df['CLASS']==classType) & (players_df['TEAM']==team)].copy()
 if not filtered.empty:
     display_options = filtered['表示'].tolist()
-    selected_player = st.selectbox("⛹️‍♂️ 選手（背番号 - 名前 - ビブス）", display_options, key="player_select")
+    selected_player = st.selectbox("\u26C9\uFE0F‍♂\uFE0F 選手（背番号 - 名前 - ビブス）", display_options, key="player_select")
     row = filtered[filtered['表示']==selected_player].iloc[0]
     uniformNumber = row['背番号']; playerName = row['プレイヤー名']; bibsType = row['ビブスType']
 else:
@@ -82,7 +90,7 @@ else:
 
 def add_event(action_label: str):
     now = time.time()
-    if now - st.session_state.last_action_ts < 0.35:  # 誤連打ガード
+    if now - st.session_state.last_action_ts < 0.35:
         return
     if uniformNumber == '--':
         st.error('選手が未選択です。'); return
@@ -91,46 +99,33 @@ def add_event(action_label: str):
     st.session_state.last_action_ts = now
     notify(f"登録: {playerName} / {action_label} / {quarter}", icon="✅")
 
-# ─────────────────────────────────────────
-# タブ状態をセッションに保持（擬似タブ：radioを横並びで）
-# ─────────────────────────────────────────
-TAB_OPTIONS = ["🧮 得点", "📈 スタッツ", "🚨 反則"]
-# 初期値は前回選択 or 先頭
+TAB_OPTIONS = ["\U0001F9EE 得点", "\U0001F4C8 スタッツ", "\U0001F6A8 反則"]
 active_tab_default = st.session_state.get("active_tab", TAB_OPTIONS[0])
-tab = st.radio(
-    "表示タブ",
-    TAB_OPTIONS,
-    horizontal=True,
-    index=TAB_OPTIONS.index(active_tab_default) if active_tab_default in TAB_OPTIONS else 0,
-    key="active_tab_radio",
-    label_visibility="collapsed",
-)
-# 選択を保持
+tab = st.radio("表示タブ", TAB_OPTIONS, horizontal=True,
+               index=TAB_OPTIONS.index(active_tab_default) if active_tab_default in TAB_OPTIONS else 0,
+               key="active_tab_radio", label_visibility="collapsed")
 st.session_state["active_tab"] = tab
 
-# ─────────────────────────────────────────
-# タブごとの中身（条件分岐で描画）
-# ─────────────────────────────────────────
-if tab == "🧮 得点":
+if tab == "\U0001F9EE 得点":
     st.caption("タップで登録")
     c1, c2, c3 = st.columns(3)
-    with c1:  st.button("🏀 3pt", on_click=add_event, args=("3pt",))
-    with c2:  st.button("🏀 2pt", on_click=add_event, args=("2pt",))
-    with c3:  st.button("🏀 1pt", on_click=add_event, args=("1pt",))
+    with c1:  st.button("\U0001F3C0 3pt", on_click=add_event, args=("3pt",))
+    with c2:  st.button("\U0001F3C0 2pt", on_click=add_event, args=("2pt",))
+    with c3:  st.button("\U0001F3C0 1pt", on_click=add_event, args=("1pt",))
 
-elif tab == "📈 スタッツ":
+elif tab == "\U0001F4C8 スタッツ":
     st.caption("タップで登録")
     r1c1, r1c2 = st.columns(2); r2c1, r2c2 = st.columns(2)
-    with r1c1: st.button("🅰️ アシスト", on_click=add_event, args=("アシスト",))
-    with r1c2: st.button("🧱 ブロック",   on_click=add_event, args=("ブロック",))
-    with r2c1: st.button("🏗️ リバウンド", on_click=add_event, args=("リバウンド",))
-    with r2c2: st.button("🕵️ スティール", on_click=add_event, args=("スティール",))
+    with r1c1: st.button("\U0001F170\uFE0F アシスト", on_click=add_event, args=("アシスト",))
+    with r1c2: st.button("\U0001F9F1 ブロック", on_click=add_event, args=("ブロック",))
+    with r2c1: st.button("\U0001F3D7️ リバウンド", on_click=add_event, args=("リバウンド",))
+    with r2c2: st.button("\U0001F575️ スティール", on_click=add_event, args=("スティール",))
 
-elif tab == "🚨 反則":
+elif tab == "\U0001F6A8 反則":
     st.caption("タップで登録")
     f1, f2 = st.columns(2)
-    with f1: st.button("🚨 ファール", on_click=add_event, args=("ファール",))
-    with f2: st.button("♻️ ターンオーバー", on_click=add_event, args=("ターンオーバー",))
+    with f1: st.button("\U0001F6A8 ファール", on_click=add_event, args=("ファール",))
+    with f2: st.button("\u267B\uFE0F ターンオーバー", on_click=add_event, args=("ターンオーバー",))
 
 # ─── ログ表示（最新N件 / 全件）＋ 管理ツール（Expanderに集約） ───
 st.markdown("---")
