@@ -57,7 +57,7 @@ def fetch_players(team=None):
 init_db()
 
 # --- UI ---
-st.title("🏀 リーグ戦：選手登録フォーム")
+st.title("🏀 リーグ戦：選手登録")
 st.caption("チームごとに選手を登録・管理します")
 
 # チーム選択
