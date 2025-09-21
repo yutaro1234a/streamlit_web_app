@@ -6,7 +6,10 @@ from app_auth import require_login, render_userbox
 
 # 認証
 require_login()
-render_userbox(key="logout_button_register")  # ページ固有のキー
+try:
+    render_userbox(key="logout_button_register")  # ページ固有のキー
+except TypeError:
+    render_userbox()  # 古い定義との互換性確保
 
 DB_PATH = 'players.db'
 
