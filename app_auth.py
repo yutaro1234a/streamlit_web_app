@@ -1,12 +1,8 @@
-# auth.py
 import os, hashlib, hmac, sqlite3
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict
 import streamlit as st
 from lib_db import get_conn
 
-# ==============================
-# パスワードハッシュ（PBKDF2-SHA256）
-# ==============================
 _ITER = 200_000
 
 def _hash_password(password: str, salt: Optional[bytes] = None) -> str:
@@ -25,9 +21,6 @@ def _verify_password(password: str, stored: str) -> bool:
     except Exception:
         return False
 
-# ==============================
-# users テーブル
-# ==============================
 def ensure_users_table(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -64,24 +57,15 @@ def authenticate(conn: sqlite3.Connection, username: str, password: str) -> Opti
         return {"id": row[0], "username": row[1], "role": row[3]}
     return None
 
-# ==============================
-# セッションユーティリティ
-# ==============================
 def get_current_user() -> Optional[Dict]:
-    """現在ログイン中のユーザー情報（id/username/role）"""
     return st.session_state.get("auth_user")
 
 def refresh_session_user(conn: sqlite3.Connection, user_id: int) -> None:
-    """DBから再取得してセッションを更新（ユーザー名変更後など）"""
     row = conn.execute("SELECT id, username, role FROM users WHERE id=?;", (user_id,)).fetchone()
     if row:
         st.session_state["auth_user"] = {"id": row[0], "username": row[1], "role": row[2]}
 
-# ==============================
-# 認可ガード＆サイドバー
-# ==============================
 def require_login() -> None:
-    """未ログインならログインページへ誘導して停止"""
     if st.session_state.get("auth_user"):
         return
     try:
@@ -95,7 +79,6 @@ def require_login() -> None:
     st.stop()
 
 def require_admin() -> None:
-    """管理者のみ許可"""
     user = get_current_user()
     if not user:
         require_login()
@@ -104,14 +87,15 @@ def require_admin() -> None:
         st.error("このページは管理者のみ利用できます。")
         st.stop()
 
-def render_userbox() -> None:
+def render_userbox(key: str = None) -> None:
     """サイドバーにユーザー情報＆ログアウト"""
     user = st.session_state.get("auth_user")
     with st.sidebar:
         if user:
             st.caption("ログイン中")
             st.markdown(f"**{user['username']}**（{user['role']}）")
-            if st.button("🚪 ログアウト", use_container_width=True):
+            logout_key = key or f"logout_button_{user['username']}"
+            if st.button("🚪 ログアウト", use_container_width=True, key=logout_key):
                 st.session_state.pop("auth_user", None)
                 try:
                     if hasattr(st, "switch_page"):
@@ -119,17 +103,10 @@ def render_userbox() -> None:
                         return
                 except Exception:
                     pass
-                st.experimental_set_query_params(page="00_ログイン")
-                try:
-                    st.rerun()
-                except Exception:
-                    pass
+                st.rerun()
         else:
             st.caption("未ログイン")
 
-# ==============================
-# 自分で変更（ユーザー名/パスワード）
-# ==============================
 def change_password(conn: sqlite3.Connection, user_id: int, current_password: str, new_password: str) -> Tuple[bool, str]:
     row = conn.execute("SELECT pw_hash FROM users WHERE id=?;", (user_id,)).fetchone()
     if not row:
@@ -155,9 +132,6 @@ def change_username(conn: sqlite3.Connection, user_id: int, new_username: str) -
     refresh_session_user(conn, user_id)
     return True, "ユーザー名を変更しました。"
 
-# ==============================
-# 管理者用（PWリセット/削除/一覧）
-# ==============================
 def admin_set_password(conn: sqlite3.Connection, target_user_id: int, new_password: str) -> Tuple[bool, str]:
     if len(new_password) < 6:
         return False, "新しいパスワードは6文字以上にしてください。"
@@ -178,5 +152,4 @@ def admin_delete_user(conn: sqlite3.Connection, target_user_id: int, acting_user
     return True, "ユーザーを削除しました。"
 
 def list_users(conn: sqlite3.Connection):
-    cur = conn.execute("SELECT id, username, role, created_at FROM users ORDER BY id;")
-    return cur.fetchall()
+    return conn.execute("SELECT id, username, role, created_at FROM users ORDER BY id;").fetchall()
