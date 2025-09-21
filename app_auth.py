@@ -87,15 +87,13 @@ def require_admin() -> None:
         st.error("このページは管理者のみ利用できます。")
         st.stop()
 
-def render_userbox(key: str = None) -> None:
-    """サイドバーにユーザー情報＆ログアウト"""
+def render_userbox(key: str = "logout_button_default") -> None:
     user = st.session_state.get("auth_user")
     with st.sidebar:
         if user:
             st.caption("ログイン中")
             st.markdown(f"**{user['username']}**（{user['role']}）")
-            logout_key = key or f"logout_button_{user['username']}"
-            if st.button("🚪 ログアウト", use_container_width=True, key=logout_key):
+            if st.button("🚪 ログアウト", width='stretch', key=key):
                 st.session_state.pop("auth_user", None)
                 try:
                     if hasattr(st, "switch_page"):
