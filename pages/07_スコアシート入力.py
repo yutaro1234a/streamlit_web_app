@@ -21,13 +21,6 @@ from app_auth import require_login, render_userbox
 # =========================
 st.set_page_config(page_title="スコアシート入力", page_icon="🏀", layout="wide")
 
-require_login()
-
-try:
-    render_userbox(key="logout_button_score_input")
-except TypeError:
-    render_userbox()
-
 # =========================
 # 定数
 # =========================
