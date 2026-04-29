@@ -127,10 +127,10 @@ def add_stat(action_label: str):
 # スタッツボタン
 st.caption("タップで登録")
 r1c1, r1c2 = st.columns(2); r2c1, r2c2 = st.columns(2)
-with r1c1: st.button("\U0001F170\uFE0F アシスト",   on_click=add_stat, args=("アシスト",),   use_container_width=True)
-with r1c2: st.button("\U0001F9F1 ブロック",     on_click=add_stat, args=("ブロック",),     use_container_width=True)
-with r2c1: st.button("\U0001F3D7️ リバウンド", on_click=add_stat, args=("リバウンド",), use_container_width=True)
-with r2c2: st.button("\U0001F575️ スティール", on_click=add_stat, args=("スティール",), use_container_width=True)
+with r1c1: st.button("\U0001F170\uFE0F アシスト",   on_click=add_stat, args=("アシスト",),   width="stretch")
+with r1c2: st.button("\U0001F9F1 ブロック",     on_click=add_stat, args=("ブロック",),     width="stretch")
+with r2c1: st.button("\U0001F3D7️ リバウンド", on_click=add_stat, args=("リバウンド",), width="stretch")
+with r2c2: st.button("\U0001F575️ スティール", on_click=add_stat, args=("スティール",), width="stretch")
 
 # ログ表示
 st.markdown("---")
@@ -159,7 +159,7 @@ with st.expander("\U0001F4CB 直近スタッツログ（削除可）", expanded=
                 disabled_cols = [c for c in df_btn.columns if c != "削除"]
                 edited = st.data_editor(
                     df_btn,
-                    hide_index=True, use_container_width=True, height=360, num_rows="fixed",
+                    hide_index=True, width="stretch", height=360, num_rows="fixed",
                     disabled=disabled_cols,
                     column_config={"削除": st.column_config.ButtonColumn(label="", help="この行を削除", icon="\U0001F5D1️", width="small")},
                     key="stat_recent_editor_btn",
@@ -172,9 +172,9 @@ with st.expander("\U0001F4CB 直近スタッツログ（削除可）", expanded=
             else:
                 df_edit = recent.copy()
                 df_edit['削除'] = False
-                edited = st.data_editor(df_edit, hide_index=True, use_container_width=True, height=360, num_rows="fixed", key="stat_recent_editor_fb")
+                edited = st.data_editor(df_edit, hide_index=True, width="stretch", height=360, num_rows="fixed", key="stat_recent_editor_fb")
                 del_ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist() if 'id' in edited.columns else []
-                if st.button("\U0001F5D1️ チェックした行を削除", type="primary", use_container_width=True, key="stat_del_btn_fb"):
+                if st.button("\U0001F5D1️ チェックした行を削除", type="primary", width="stretch", key="stat_del_btn_fb"):
                     if del_ids:
                         delete_events_by_ids(conn, del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
@@ -187,6 +187,6 @@ st.markdown("---")
 if hasattr(st, "page_link"):
     cols_nav = st.columns(2)
     with cols_nav[0]:
-        st.page_link("pages/01_集計.py", label="\U0001F4CA 集計", icon="➡️", use_container_width=True)
+        st.page_link("pages/01_集計.py", label="\U0001F4CA 集計", icon="➡️", width="stretch")
     with cols_nav[1]:
         st.write("")

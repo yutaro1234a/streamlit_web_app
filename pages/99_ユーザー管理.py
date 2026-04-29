@@ -61,7 +61,7 @@ else:
         view = view[view["username"].str.contains(q.strip(), na=False)]
     if role_pick != "すべて":
         view = view[view["role"] == role_pick]
-    st.dataframe(view.sort_values(["id"]), use_container_width=True, height=280)
+    st.dataframe(view.sort_values(["id"]), width="stretch", height=280)
 
 st.markdown("---")
 col_add, col_edit = st.columns(2)
@@ -74,7 +74,7 @@ with col_add:
         new_p1 = st.text_input("パスワード", type="password", key="add_user_pw1")
         new_p2 = st.text_input("パスワード（確認）", type="password", key="add_user_pw2")
         new_role = st.selectbox("ロール", ["user", "admin"], key="add_user_role")
-        ok_add = st.form_submit_button("作成", use_container_width=True)
+        ok_add = st.form_submit_button("作成", width="stretch")
     if ok_add:
         if not new_u or not new_p1:
             st.error("ユーザー名／パスワードは必須です。")
@@ -107,7 +107,7 @@ with col_edit:
             # a) ユーザー名変更
             with st.form("edit_username"):
                 new_name = st.text_input("新しいユーザー名", value=sel_row.username, key="edit_username_value")
-                ok_uname = st.form_submit_button("✏️ ユーザー名を変更", use_container_width=True)
+                ok_uname = st.form_submit_button("✏️ ユーザー名を変更", width="stretch")
             if ok_uname:
                 ok, msg = app_auth.change_username(conn, user_id=int(sel_row.id), new_username=new_name)
                 (st.success if ok else st.error)(msg)
@@ -122,7 +122,7 @@ with col_edit:
             # b) ロール変更
             with st.form("edit_role"):
                 role_new = st.selectbox("ロールを変更", ["user", "admin"], index=0 if sel_row.role == "user" else 1, key="edit_role_value")
-                ok_role = st.form_submit_button("🔁 ロールを変更", use_container_width=True)
+                ok_role = st.form_submit_button("🔁 ロールを変更", width="stretch")
             if ok_role:
                 try:
                     conn.execute("UPDATE users SET role=? WHERE id=?", (role_new, int(sel_row.id)))
@@ -141,7 +141,7 @@ with col_edit:
             with st.form("reset_pw"):
                 pw1 = st.text_input("新しいパスワード", type="password", key="reset_pw1")
                 pw2 = st.text_input("新しいパスワード（確認）", type="password", key="reset_pw2")
-                ok_pw = st.form_submit_button("🔐 パスワードをリセット", use_container_width=True)
+                ok_pw = st.form_submit_button("🔐 パスワードをリセット", width="stretch")
             if ok_pw:
                 if pw1 != pw2:
                     st.error("確認用パスワードが一致しません。")
@@ -155,7 +155,7 @@ with col_edit:
             with st.form("delete_user"):
                 st.warning("⚠️ この操作は取り消せません。")
                 confirm_txt = st.text_input(f"確認用に「DELETE {int(sel_row.id)}」と入力してください", key="delete_confirm_txt")
-                ok_del = st.form_submit_button("🗑️ ユーザーを削除", use_container_width=True)
+                ok_del = st.form_submit_button("🗑️ ユーザーを削除", width="stretch")
             if ok_del:
                 if confirm_txt.strip() == f"DELETE {int(sel_row.id)}":
                     ok, msg = app_auth.admin_delete_user(conn, int(sel_row.id), acting_user_id=int(me["id"]))
@@ -172,9 +172,9 @@ with col_edit:
 cols_top = st.columns([1, 2, 1])
 with cols_top[1]:
     if hasattr(st, "page_link"):
-        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
+        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", width="stretch")
     else:
-        if st.button("⬅️ main画面へ戻る", use_container_width=True):
+        if st.button("⬅️ main画面へ戻る", width="stretch"):
             try:
                 if hasattr(st, "switch_page"):
                     st.switch_page("main.py")

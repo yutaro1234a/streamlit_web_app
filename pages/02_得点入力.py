@@ -123,11 +123,11 @@ def add_score(action_label: str):
 st.caption("タップで登録")
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.button("\U0001F3C0 3pt", on_click=add_score, args=("3pt",), use_container_width=True)
+    st.button("\U0001F3C0 3pt", on_click=add_score, args=("3pt",), width="stretch")
 with c2:
-    st.button("\U0001F3C0 2pt", on_click=add_score, args=("2pt",), use_container_width=True)
+    st.button("\U0001F3C0 2pt", on_click=add_score, args=("2pt",), width="stretch")
 with c3:
-    st.button("\U0001F3C0 1pt", on_click=add_score, args=("1pt",), use_container_width=True)
+    st.button("\U0001F3C0 1pt", on_click=add_score, args=("1pt",), width="stretch")
 
 st.markdown("---")
 with st.expander("\U0001F4CB 直近ログ（得点のみ・削除可）", expanded=False):
@@ -158,7 +158,7 @@ with st.expander("\U0001F4CB 直近ログ（得点のみ・削除可）", expand
                 edited = st.data_editor(
                     df_btn,
                     hide_index=True,
-                    use_container_width=True,
+                    width="stretch",
                     height=360,
                     num_rows="fixed",
                     disabled=disabled_cols,
@@ -181,9 +181,9 @@ with st.expander("\U0001F4CB 直近ログ（得点のみ・削除可）", expand
             else:
                 df_edit = recent.copy()
                 df_edit['削除'] = False
-                edited = st.data_editor(df_edit, hide_index=True, use_container_width=True, height=360, num_rows="fixed", key="score_recent_editor_fb")
+                edited = st.data_editor(df_edit, hide_index=True, width="stretch", height=360, num_rows="fixed", key="score_recent_editor_fb")
                 del_ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist() if 'id' in edited.columns else []
-                if st.button("\U0001F5D1️ チェックした行を削除", type="primary", use_container_width=True, key="score_del_btn_fb"):
+                if st.button("\U0001F5D1️ チェックした行を削除", type="primary", width="stretch", key="score_del_btn_fb"):
                     if del_ids:
                         delete_events_by_ids(conn, del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
@@ -195,6 +195,6 @@ st.markdown("---")
 if hasattr(st, "page_link"):
     cols_nav = st.columns(2)
     with cols_nav[0]:
-        st.page_link("pages/01_集計.py", label="\U0001F4CA 集計", icon="➡️", use_container_width=True)
+        st.page_link("pages/01_集計.py", label="\U0001F4CA 集計", icon="➡️", width="stretch")
     with cols_nav[1]:
         st.write("")

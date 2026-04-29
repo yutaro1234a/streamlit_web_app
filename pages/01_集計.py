@@ -56,10 +56,10 @@ if df.empty:
     with col_mid:
         # 新しめの環境
         if hasattr(st, "page_link"):
-            st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
+            st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", width="stretch")
         else:
             # フォールバック：Python側で内部遷移（セッション維持）
-            if st.button("⬅️ main画面へ戻る", use_container_width=True):
+            if st.button("⬅️ main画面へ戻る", width="stretch"):
                 try:
                     st.switch_page("main.py")
                 except Exception:
@@ -84,14 +84,14 @@ with tab_score:
     st.dataframe(
         score_df.groupby('TEAM', as_index=False)['得点'].sum()
         if not score_df.empty else pd.DataFrame({'TEAM': [], '得点': []}),
-        use_container_width=True
+        width="stretch"
     )
 
     st.subheader('🚀CLASSごとの得点')
     st.dataframe(
         score_df.groupby(['CLASS','TEAM'], as_index=False)['得点'].sum()
         if not score_df.empty else pd.DataFrame({'CLASS': [], 'TEAM': [], '得点': []}),
-        use_container_width=True
+        width="stretch"
     )
 
     st.subheader('⏱️🚀CLASS × QUARTERごとの得点')
@@ -101,7 +101,7 @@ with tab_score:
     )
     if {'Red','Blue'}.issubset(set(pivot.columns)):
         pivot['合計'] = pivot['Red'] + pivot['Blue']
-    st.dataframe(pivot.reset_index(), use_container_width=True)
+    st.dataframe(pivot.reset_index(), width="stretch")
 
     st.subheader('🏅得点ランキング')
     N = st.number_input("得点ランキング", min_value=1, max_value=500, value=10, step=1, key="topN_all")
@@ -111,7 +111,7 @@ with tab_score:
         .sort_values(['得点','CLASS','TEAM','背番号'], ascending=[False, True, True, True])
         .head(int(N))
     )
-    st.dataframe(per_player_all, use_container_width=True)
+    st.dataframe(per_player_all, width="stretch")
 
     st.subheader('🏅得点ランキング CLASS×TEAM')
     col_sel1, col_sel2, col_sel3 = st.columns([1, 1, 1])
@@ -138,7 +138,7 @@ with tab_score:
                 .sort_values(['得点','TEAM','背番号'], ascending=[False, True, True])
                 .head(int(N_cls))
         )
-        st.dataframe(per_player_cls, use_container_width=True)
+        st.dataframe(per_player_cls, width="stretch")
 
 
 with tab_stat:
@@ -147,14 +147,14 @@ with tab_stat:
         # TEAM ごとのスタッツ（項目別）
         st.dataframe(
             stat_df.groupby(['TEAM','項目'], as_index=False)['回数'].sum(),
-            use_container_width=True
+            width="stretch"
         )
 
         # CLASS × TEAM ごとのスタッツ（項目別）
         st.subheader('🚀CLASSごとのスタッツ')
         st.dataframe(
             stat_df.groupby(['CLASS','TEAM','項目'], as_index=False)['回数'].sum(),
-            use_container_width=True
+            width="stretch"
         )
 
         # 選手 × 項目（CLASS選択）
@@ -169,7 +169,7 @@ with tab_stat:
             st.dataframe(
                 cls_df.groupby(['TEAM','ビブスType','背番号','名前','項目'], as_index=False)['回数'].sum()
                       .sort_values(['TEAM','背番号','名前','項目']),
-                use_container_width=True
+                width="stretch"
             )
 
     else:
@@ -210,21 +210,21 @@ with tab_foul:
             st.dataframe(
                 sub.groupby(['TEAM','項目'], as_index=False)['回数'].sum()
                    .sort_values(['TEAM','項目']),
-                use_container_width=True
+                width="stretch"
             )
 
             st.subheader(f'🚀CLASSごとの反則 {scope_tag}')
             st.dataframe(
                 sub.groupby(['CLASS','TEAM','項目'], as_index=False)['回数'].sum()
                    .sort_values(['CLASS','TEAM','項目']),
-                use_container_width=True
+                width="stretch"
             )
 
             st.subheader(f'🚀⏱️CLASS × クォーターごとの反則 {scope_tag}')
             st.dataframe(
                 sub.groupby(['クォーター','TEAM','項目'], as_index=False)['回数'].sum()
                    .sort_values(['クォーター','TEAM','項目']),
-                use_container_width=True
+                width="stretch"
             )
 
             st.subheader(f'⛹️‍♀️選手ごとの反則（CLASSを選択）{scope_tag}')
@@ -237,7 +237,7 @@ with tab_foul:
                 st.dataframe(
                     cls_foul.groupby(['TEAM','ビブスType','背番号','名前','項目'], as_index=False)['回数'].sum()
                             .sort_values(['TEAM','背番号','名前','項目']),
-                    use_container_width=True
+                    width="stretch"
                 )
 
 # これに置き換え（変数名を明示的に）
@@ -245,10 +245,10 @@ col_left, col_mid, col_right = st.columns([1, 2, 1])
 with col_mid:
     # 新しめの環境
     if hasattr(st, "page_link"):
-        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", use_container_width=True)
+        st.page_link("main.py", label="⬅️ main画面へ戻る", icon="🏠", width="stretch")
     else:
         # フォールバック：Python側で内部遷移（セッション維持）
-        if st.button("⬅️ main画面へ戻る", use_container_width=True):
+        if st.button("⬅️ main画面へ戻る", width="stretch"):
             try:
                 st.switch_page("main.py")
             except Exception:

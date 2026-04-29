@@ -149,9 +149,9 @@ if not df_show.empty:
     if supports_data_editor:
         df_edit = df_show.copy()
         df_edit['削除'] = False
-        edited = st.data_editor(df_edit, hide_index=True, use_container_width=True, height=480)
+        edited = st.data_editor(df_edit, hide_index=True, width="stretch", height=480)
     else:
-        st.dataframe(df_show, use_container_width=True, height=480)
+        st.dataframe(df_show, width="stretch", height=480)
 
     # ★ 管理ツールをひとまとめの Expander に格納
     with st.expander("🧰 管理ツール（削除・取り消し・エクスポート・バックアップ・全消去）", expanded=False):
@@ -161,7 +161,7 @@ if not df_show.empty:
         if supports_data_editor:
             colD1, colD2 = st.columns([1,2])
             with colD1:
-                if st.button("🗑️ チェックした行を削除", type="primary", use_container_width=True):
+                if st.button("🗑️ チェックした行を削除", type="primary", width="stretch"):
                     ids = edited.loc[edited['削除'] == True, 'id'].astype(int).tolist()
                     if ids:
                         delete_events_by_ids(conn, ids)
@@ -171,7 +171,7 @@ if not df_show.empty:
                         st.warning("削除対象が選ばれていません。")
             with colD2:
                 id_text = st.text_input("id をカンマ区切りで指定（例: 101,102,120）", value="", key="id_delete_input")
-                if st.button("🧹 指定した id を削除", use_container_width=True):
+                if st.button("🧹 指定した id を削除", width="stretch"):
                     try:
                         ids = [int(s.strip()) for s in id_text.split(",") if s.strip()]
                     except ValueError:
@@ -186,7 +186,7 @@ if not df_show.empty:
             del_ids = st.multiselect("削除する id を選択", df_show['id'].tolist(), key="del_ids_multiselect")
             colD1, colD2 = st.columns([1,2])
             with colD1:
-                if st.button("🗑️ 選択した id を削除", type="primary", use_container_width=True):
+                if st.button("🗑️ 選択した id を削除", type="primary", width="stretch"):
                     if del_ids:
                         delete_events_by_ids(conn, del_ids)
                         st.success(f"{len(del_ids)} 件を削除しました。")
@@ -195,7 +195,7 @@ if not df_show.empty:
                         st.warning("削除対象が選ばれていません。")
             with colD2:
                 id_text = st.text_input("id をカンマ区切りで指定（例: 101,102,120）", value="", key="id_delete_input_fb")
-                if st.button("🧹 指定した id を削除（互換）", use_container_width=True):
+                if st.button("🧹 指定した id を削除（互換）", width="stretch"):
                     try:
                         ids = [int(s.strip()) for s in id_text.split(",") if s.strip()]
                     except ValueError:
@@ -211,7 +211,7 @@ if not df_show.empty:
 
         # ② 直前の登録を取り消す
         st.markdown("**↩️ 直前取り消し**")
-        if st.button("↩️ 直前の登録を取り消す", use_container_width=True):
+        if st.button("↩️ 直前の登録を取り消す", width="stretch"):
             if st.session_state.last_insert_id:
                 delete_event_by_id(conn, st.session_state.last_insert_id)
                 st.success("直前の1件を取り消しました。")
@@ -227,11 +227,11 @@ if not df_show.empty:
         colE1, colE2 = st.columns(2)
         with colE1:
             fname, csv_bytes = export_events_csv(conn)
-            st.download_button("⬇️ CSVエクスポート（全データ）", data=csv_bytes, file_name=fname, mime="text/csv", use_container_width=True)
+            st.download_button("⬇️ CSVエクスポート（全データ）", data=csv_bytes, file_name=fname, mime="text/csv", width="stretch")
         with colE2:
-            if st.button("🗂️ SQLiteバックアップ作成", use_container_width=True):
+            if st.button("🗂️ SQLiteバックアップ作成", width="stretch"):
                 bak_name, bak_bytes = backup_sqlite(conn)
-                st.download_button("⬇️ バックアップをダウンロード", data=bak_bytes, file_name=bak_name, mime="application/octet-stream", use_container_width=True)
+                st.download_button("⬇️ バックアップをダウンロード", data=bak_bytes, file_name=bak_name, mime="application/octet-stream", width="stretch")
 
         st.markdown("---")
 
@@ -241,7 +241,7 @@ if not df_show.empty:
         with colx:
             confirm = st.text_input("確認のため、DELETE と入力してください（全角不可）", value="")
         with coly:
-            if st.button("🗑️ 全データ削除", type="primary", use_container_width=True):
+            if st.button("🗑️ 全データ削除", type="primary", width="stretch"):
                 if confirm.strip() == "DELETE":
                     wipe_all_data(conn)
                     st.session_state.last_insert_id = None

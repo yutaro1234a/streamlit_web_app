@@ -49,7 +49,7 @@ def segmented_picker(
         show = f"✅ {opt}" if active else opt
         btn_key = f"{base}_btn_{i}"  # ← 呼び出し毎に base が変わるので衝突しない
 
-        if cols[i].button(show, key=btn_key, use_container_width=True):
+        if cols[i].button(show, key=btn_key, width="stretch"):
             st.session_state[key] = opt
             try:
                 st.rerun()
