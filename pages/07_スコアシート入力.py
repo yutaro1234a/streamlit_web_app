@@ -21,13 +21,12 @@ from app_auth import require_login, render_userbox
 # =========================
 st.set_page_config(page_title="スコアシート入力", page_icon="🏀", layout="wide")
 
-# =========================
-# ページ設定
-# =========================
-st.set_page_config(page_title="📊 スコア集計", layout="wide")
-
 require_login()
-render_userbox()
+
+try:
+    render_userbox(key="logout_button_score_input")
+except TypeError:
+    render_userbox()
 
 # =========================
 # 定数
