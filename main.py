@@ -322,6 +322,74 @@ def inject_global_style():
         button[aria-label="Close"] {
             display: none !important;
         }
+
+
+        /* ===== 表示範囲ラジオ専用：タブ風UI ===== */
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+            padding: 8px !important;
+            border-radius: 999px !important;
+            background: rgba(241, 245, 249, 0.95) !important;
+            border: 1px solid rgba(15, 23, 42, 0.08) !important;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label {
+            width: 100% !important;
+            min-height: 54px !important;
+            margin: 0 !important;
+            padding: 0 16px !important;
+            border-radius: 999px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            transition: all 0.25s ease !important;
+            color: #64748b !important;
+            font-weight: 900 !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label > div:first-child {
+            display: none !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label p {
+            margin: 0 !important;
+            font-size: 16px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.02em !important;
+            color: inherit !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label:has(input:checked) {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #ff8a00 0%, #ff3d6e 100%) !important;
+            box-shadow: 0 12px 24px rgba(255, 92, 80, 0.35) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label:hover {
+            transform: translateY(-1px) !important;
+        }
+
+        @media (max-width: 768px) {
+            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] {
+                gap: 6px !important;
+                padding: 6px !important;
+            }
+
+            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label {
+                min-height: 46px !important;
+                padding: 0 8px !important;
+            }
+
+            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label p {
+                font-size: 13px !important;
+            }
+        }
         </style>
         """,
         unsafe_allow_html=True,
