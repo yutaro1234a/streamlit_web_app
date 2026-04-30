@@ -467,7 +467,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".cell-two { background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important; }"
     html += ".cell-three { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }"
     html += ".score-no { background: #ffffff; color: #334155; font-size: 12px; font-weight: 850; position: relative; }"
-    html += ".score-mark { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 950; color: #0f172a; pointer-events: none; }"
+    html += ".score-mark { position: absolute; top: 1px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 950; color: #0f172a; pointer-events: none; }"
     html += ".class-beginner { color: #dc2626 !important; }"
     html += ".class-intermediate { color: #2563eb !important; }"
     html += ".class-advanced { color: #111827 !important; }"
@@ -904,7 +904,7 @@ st.markdown(
         <div>
             <div class="hero-eyebrow">🏀 LIVE SCORE SHEET</div>
             <h1 class="hero-title">スコアシート入力</h1>
-            <div class="hero-caption">試合中の得点入力・集計・PDF出力を、1画面でスムーズに。</div>
+            <div class="hero-caption">試合中の得点入力・集計・PDF出力を。</div>
             <div class="hero-actions">
                 <span class="pill">⚡ リアルタイム集計</span>
                 <span class="pill">🧾 PDF出力対応</span>
@@ -937,7 +937,7 @@ b_total = get_team_total(events_df, team_b_name)
 # 上部スコアボード
 a_team_safe = html_lib.escape(team_a_name)
 b_team_safe = html_lib.escape(team_b_name)
-lead_text = "同点です。次の1本が熱いです。" if a_total == b_total else f"{html_lib.escape(team_a_name if a_total > b_total else team_b_name)} がリード中"
+lead_text = "同点です。" if a_total == b_total else f"{html_lib.escape(team_a_name if a_total > b_total else team_b_name)} がリード中"
 
 st.markdown(
     f"""
@@ -1059,13 +1059,13 @@ st.markdown(
 )
 
 st.markdown(
-    '<div class="hint-card">💡 灰色セルをクリックすると入力画面が開きます。PDF出力前にチーム名と得点を確認してください。</div>',
+    '<div class="hint-card">💡 灰色セルをクリックすると入力画面が開きます。</div>',
     unsafe_allow_html=True,
 )
 
 score_range = st.radio(
     "表示範囲",
-    ["🏀 1〜80点", "🔥 81〜160点"],
+    ["🏀 1〜80点", "🏀🏀 81〜160点"],
     horizontal=True,
     key="score_range_mode",
     label_visibility="collapsed",
@@ -1097,7 +1097,7 @@ if (
         if score_no <= 80:
             st.session_state.score_range_mode = "🏀 1〜80点"
         else:
-            st.session_state.score_range_mode = "🔥 81〜160点"
+            st.session_state.score_range_mode = "🏀🏀 81〜160点"
     except Exception:
         pass
 
