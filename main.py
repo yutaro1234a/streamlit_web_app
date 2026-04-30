@@ -467,7 +467,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".cell-two { background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important; }"
     html += ".cell-three { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }"
     html += ".score-no { background: #ffffff; color: #334155; font-size: 12px; font-weight: 850; position: relative; }"
-    html += ".score-mark { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 950; color: #0f172a; pointer-events: none; }"
+    html += ".score-mark { position: absolute; top: 0px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 950; color: #0f172a; pointer-events: none; }"
     html += ".class-beginner { color: #dc2626 !important; }"
     html += ".class-intermediate { color: #2563eb !important; }"
     html += ".class-advanced { color: #111827 !important; }"
