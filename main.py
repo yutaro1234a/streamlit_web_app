@@ -317,6 +317,12 @@ def inject_global_style():
                 margin-top: 12px !important;
             }
         }
+        
+        /* ダイアログ右上の×ボタンを非表示 */
+        button[aria-label="Close"] {
+            display: none !important;
+        }
+        
         </style>
         """,
         unsafe_allow_html=True,
@@ -423,6 +429,8 @@ def init_state():
         st.session_state.click_nonce = 0
     if "last_selected_class" not in st.session_state:
         st.session_state.last_selected_class = "初級"
+    if "last_clicked_cell" not in st.session_state:
+        st.session_state.last_clicked_cell = ""
 
 def open_score_dialog(cell_key: str):
     st.session_state.selected_cell = cell_key
@@ -433,6 +441,7 @@ def open_score_dialog(cell_key: str):
 def close_score_dialog():
     st.session_state.show_score_dialog = False
     st.session_state.dialog_cell = ""
+    st.session_state.last_clicked_cell = ""
     st.session_state.click_nonce += 1
 
 
@@ -1081,7 +1090,11 @@ with tab2:
 
 clicked_cell = clicked_cell_1 or clicked_cell_2
 
-if clicked_cell in st.session_state.scores:
+# ⭐ ここを修正（超重要）
+if (
+    clicked_cell in st.session_state.scores
+    and not st.session_state.show_score_dialog
+):
     open_score_dialog(clicked_cell)
 
 if st.session_state.show_score_dialog and st.session_state.dialog_cell:
