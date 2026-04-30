@@ -6,7 +6,6 @@ import sqlite3
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 from st_click_detector import click_detector
 
 from reportlab.lib import colors
@@ -15,8 +14,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-
-from app_auth import require_login
+from app_auth import require_login, render_userbox
 
 
 # =========================
@@ -25,6 +23,8 @@ from app_auth import require_login
 st.set_page_config(page_title="スコアシート入力", page_icon="🏀", layout="wide")
 st.session_state["login_redirect_to"] = "main.py"
 require_login()
+# render_userbox は他の共通処理・ページ側で呼ばれている場合に
+# DuplicateElementKey になるため、main.py では呼ばない。
 
 
 # =========================
@@ -33,10 +33,14 @@ require_login()
 DATA_FILE = Path("score_sheet_data.json")
 PLAYERS_DB_PATH = "players.db"
 
-DISPLAY_MARK_MAP = {"1点": "●", "2点": "/", "3点": "/"}
+DISPLAY_MARK_MAP = {
+    "1点": "●",
+    "2点": "/",
+    "3点": "/",
+}
+
 POINT_MAP = {"": 0, "1点": 1, "2点": 2, "3点": 3}
 CLASS_OPTIONS = ["初級", "中級", "上級"]
-RANGE_OPTIONS = ["🏀 1〜80点", "🔥 81〜160点"]
 
 
 # =========================
@@ -79,7 +83,9 @@ def inject_global_style():
             max-width: 1320px;
         }
 
-        [data-testid="stHeader"] { background: rgba(255,255,255,0); }
+        [data-testid="stHeader"] {
+            background: rgba(255,255,255,0);
+        }
 
         .app-hero {
             position: relative;
@@ -232,11 +238,6 @@ def inject_global_style():
             margin: 1.8rem 0 !important;
         }
 
-        /* ダイアログ右上の×ボタンを非表示 */
-        button[aria-label="Close"] {
-            display: none !important;
-        }
-
         @media (max-width: 768px) {
             .block-container {
                 padding-top: 138px !important;
@@ -244,25 +245,17 @@ def inject_global_style():
                 padding-right: .55rem !important;
             }
 
-            .app-hero {
-                grid-template-columns: 1fr;
-                padding: 18px;
-                border-radius: 26px;
-            }
-
-            .hero-ball-wrap { display: none; }
-            .hero-title { font-size: 34px; }
-            .hero-caption { font-size: 13px; }
-
             .score-board {
                 position: fixed !important;
                 top: 28px !important;
                 left: 8px !important;
                 right: 8px !important;
                 z-index: 99999 !important;
+
                 display: grid !important;
                 grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) !important;
                 gap: 6px !important;
+
                 margin: 0 !important;
                 padding: 6px !important;
                 border-radius: 22px !important;
@@ -312,9 +305,22 @@ def inject_global_style():
                 box-shadow: none !important;
             }
 
-            .versus-main { font-size: 14px !important; }
-            .versus-sub { display: none !important; }
-            .hint-card { margin-top: 12px !important; }
+            .versus-main {
+                font-size: 14px !important;
+            }
+
+            .versus-sub {
+                display: none !important;
+            }
+
+            .hint-card {
+                margin-top: 12px !important;
+            }
+        }
+        
+        /* ダイアログ右上の×ボタンを非表示 */
+        button[aria-label="Close"] {
+            display: none !important;
         }
         </style>
         """,
@@ -349,7 +355,13 @@ def to_circle_number(num_str):
     return circle_map.get(str(num_str).strip(), str(num_str).strip())
 
 
-@st.cache_data(show_spinner=False, ttl=30)
+def remove_cell_query_param():
+    try:
+        st.query_params.pop("cell", None)
+    except Exception:
+        pass
+
+
 def fetch_players():
     try:
         with sqlite3.connect(PLAYERS_DB_PATH) as conn:
@@ -403,10 +415,6 @@ def save_scores():
         json.dump(st.session_state.scores, f, ensure_ascii=False, indent=2)
 
 
-def invalidate_pdf_data():
-    st.session_state.pdf_data = None
-
-
 def init_state():
     if "scores" not in st.session_state:
         st.session_state.scores = load_scores()
@@ -422,11 +430,6 @@ def init_state():
         st.session_state.last_selected_class = "初級"
     if "last_clicked_cell" not in st.session_state:
         st.session_state.last_clicked_cell = ""
-    if "score_range_mode" not in st.session_state:
-        st.session_state.score_range_mode = RANGE_OPTIONS[0]
-    if "pdf_data" not in st.session_state:
-        st.session_state.pdf_data = None
-
 
 def open_score_dialog(cell_key: str):
     st.session_state.selected_cell = cell_key
@@ -441,32 +444,8 @@ def close_score_dialog():
     st.session_state.click_nonce += 1
 
 
-def inject_scroll_to_selected_cell():
-    if not st.session_state.get("selected_cell"):
-        return
-
-    components.html(
-        """
-        <script>
-        setTimeout(function() {
-            const doc = window.parent.document;
-            const target = doc.getElementById("selected_score_row");
-            if (target) {
-                target.scrollIntoView({
-                    behavior: "auto",
-                    block: "center",
-                    inline: "nearest"
-                });
-            }
-        }, 500);
-        </script>
-        """,
-        height=0,
-    )
-
-
 # =========================
-# ランニングスコアHTML
+# 画面用 ランニングスコアHTML
 # =========================
 def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html = ""
@@ -482,7 +461,6 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".score-block-table th { background: linear-gradient(135deg, #f8fafc, #e2e8f0); font-size: 12px; font-weight: 950; color: #0f172a; }"
     html += ".input-cell { background: linear-gradient(135deg, #f8fafc, #e2e8f0); cursor: pointer; font-weight: 950; font-size: 18px; transition: transform .14s ease, box-shadow .14s ease, filter .14s ease; }"
     html += ".input-cell:hover { transform: scale(1.045); filter: brightness(1.02); box-shadow: inset 0 0 0 2px rgba(249,115,22,.62); }"
-    html += ".input-cell:active { transform: scale(0.96); }"
     html += ".input-cell a { display: block; width: 100%; height: 100%; color: inherit; text-decoration: none; line-height: 32px; }"
     html += ".selected-cell { background: linear-gradient(135deg, #fed7aa, #fb923c) !important; outline: 3px solid #ea580c; outline-offset: -3px; }"
     html += ".cell-one { background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important; }"
@@ -497,10 +475,9 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".score-wrap { overflow-x: hidden; padding: 12px; border-radius: 22px; }"
     html += ".score-block-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }"
     html += ".score-block-table { width: calc(50% - 6px); font-size: 11px; border-radius: 15px; }"
-    html += ".score-block-table th, .score-block-table td { width: 34px; height: 34px; }"
+    html += ".score-block-table th, .score-block-table td { width: 34px; height: 26px; }"
     html += ".input-cell { font-size: 14px; }"
-    html += ".input-cell:hover { transform: none; }"
-    html += ".input-cell a { line-height: 34px; min-height: 34px; }"
+    html += ".input-cell a { line-height: 26px; }"
     html += ".score-no { font-size: 10px; }"
     html += ".score-mark { top: -3px; font-size: 17px; }"
     html += ".score-title-main { font-size: 12px; padding: 9px; }"
@@ -522,9 +499,9 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     def class_color_class(class_type):
         if class_type == "初級":
             return "class-beginner"
-        if class_type == "中級":
+        elif class_type == "中級":
             return "class-intermediate"
-        if class_type == "上級":
+        elif class_type == "上級":
             return "class-advanced"
         return ""
 
@@ -566,11 +543,11 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
 
             if a_mark:
                 a_text = to_circle_number(a_number) if a_mark == "3点" else a_number
+
             if b_mark:
                 b_text = to_circle_number(b_number) if b_mark == "3点" else b_number
 
-            row_id = ' id="selected_score_row"' if a_key == selected_cell or b_key == selected_cell else ""
-            html += f"<tr{row_id}>"
+            html += "<tr>"
             html += (
                 f'<td class="{a_class} {a_color_class}">'
                 f'<a href="#" id="{a_key}">{html_lib.escape(str(a_text))}</a>'
@@ -622,7 +599,9 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
     bg = ImageReader(str(template_path))
     c.drawImage(bg, 0, 0, width=page_w, height=page_h, mask="auto")
 
-    scores = getattr(st.session_state, "scores", None) or load_scores()
+    scores = getattr(st.session_state, "scores", None)
+    if not scores:
+        scores = load_scores()
 
     def set_font(size):
         c.setFont(font, size)
@@ -673,7 +652,11 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
     draw_text_left(60, page_h - 22, team_a_name, 7)
     draw_text_left(362, page_h - 22, team_b_name, 7)
 
-    layout = {
+    RUNNING_SCORE_LAYOUT = {
+        "erase_x": 0,
+        "erase_y": 0,
+        "erase_w": 0,
+        "erase_h": 0,
         "x": 309,
         "top_y": 750,
         "cell_w": 15.2,
@@ -681,14 +664,24 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
         "block_gap": 10.6,
     }
 
-    lx = layout["x"]
-    top_y = layout["top_y"]
-    cell_w = layout["cell_w"]
-    cell_h = layout["cell_h"]
-    block_gap = layout["block_gap"]
+    lx = RUNNING_SCORE_LAYOUT["x"]
+    top_y = RUNNING_SCORE_LAYOUT["top_y"]
+    cell_w = RUNNING_SCORE_LAYOUT["cell_w"]
+    cell_h = RUNNING_SCORE_LAYOUT["cell_h"]
+    block_gap = RUNNING_SCORE_LAYOUT["block_gap"]
     block_w = cell_w * 4
 
+    c.setFillColor(colors.white)
+    c.rect(
+        RUNNING_SCORE_LAYOUT["erase_x"],
+        RUNNING_SCORE_LAYOUT["erase_y"],
+        RUNNING_SCORE_LAYOUT["erase_w"],
+        RUNNING_SCORE_LAYOUT["erase_h"],
+        stroke=0,
+        fill=1,
+    )
     c.setFillColor(colors.black)
+
     draw_text_center(
         lx + (block_w * 4 + block_gap * 3) / 2,
         top_y + 8,
@@ -701,7 +694,6 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
 
     for block in range(4):
         bx = lx + block * (block_w + block_gap)
-
         c.setFillColor(colors.white)
         c.rect(bx, top_y - cell_h, cell_w * 2, cell_h, stroke=1, fill=1)
         c.rect(bx + cell_w * 2, top_y - cell_h, cell_w * 2, cell_h, stroke=1, fill=1)
@@ -755,14 +747,10 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
 # =========================
 @st.dialog("スコア入力")
 def score_dialog(cell_key: str):
-    if st.button("✕ 閉じる", key=f"dialog_close_{cell_key}", width="stretch"):
-        close_score_dialog()
-        st.rerun()
-
     data = st.session_state.scores[cell_key]
     team, score_no = cell_key.split("_")
 
-    st.markdown("### 🏀 スコア入力")
+    st.markdown(f"### 🏀 スコア入力")
     st.caption(f"対象：{team} / スコア番号 {score_no}")
 
     mark_options = ["2点", "3点", "1点"]
@@ -777,6 +765,7 @@ def score_dialog(cell_key: str):
     )
 
     default_class = st.session_state.get("last_selected_class", data.get("class", "初級"))
+
     if default_class not in CLASS_OPTIONS:
         default_class = "初級"
 
@@ -790,15 +779,11 @@ def score_dialog(cell_key: str):
 
     players_df = fetch_players()
     team_name_for_filter = "Red" if team == "A" else "Blue"
-
-    filtered_players = players_df[
-        (players_df["team"] == team_name_for_filter)
-        & (players_df["class_type"] == player_class)
-    ].copy()
+    filtered_players = players_df[players_df["team"] == team_name_for_filter].copy()
+    filtered_players = filtered_players[filtered_players["class_type"] == player_class].copy()
 
     player_options = []
     player_numbers = []
-
     for _, row in filtered_players.iterrows():
         num = str(row["uniform_number"]).strip()
         label = f"{num} - {row['player_name']}"
@@ -830,7 +815,6 @@ def score_dialog(cell_key: str):
             }
             st.session_state["last_selected_class"] = player_class
             save_scores()
-            invalidate_pdf_data()
             st.session_state.selected_cell = cell_key
             close_score_dialog()
             st.rerun()
@@ -847,7 +831,6 @@ def score_dialog(cell_key: str):
             "number": "",
         }
         save_scores()
-        invalidate_pdf_data()
         st.session_state.selected_cell = cell_key
         close_score_dialog()
         st.rerun()
@@ -934,6 +917,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">🏷️ チーム設定</div>', unsafe_allow_html=True)
 team_col1, team_col2 = st.columns(2)
@@ -941,7 +925,7 @@ with team_col1:
     team_a_name = st.text_input("Aチーム名", value="Redチーム", key="team_a_name_input")
 with team_col2:
     team_b_name = st.text_input("Bチーム名", value="Blueチーム", key="team_b_name_input")
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 events_df = build_events(team_a_name, team_b_name)
 summary_df = build_summary(events_df)
@@ -950,13 +934,7 @@ team_summary_df = build_team_summary(events_df)
 a_total = get_team_total(events_df, team_a_name)
 b_total = get_team_total(events_df, team_b_name)
 
-prev_a_total = st.session_state.get("prev_a_total", a_total)
-prev_b_total = st.session_state.get("prev_b_total", b_total)
-a_updated = " updated" if a_total != prev_a_total else ""
-b_updated = " updated" if b_total != prev_b_total else ""
-a_leader = " leader" if a_total > b_total else ""
-b_leader = " leader" if b_total > a_total else ""
-
+# 上部スコアボード
 a_team_safe = html_lib.escape(team_a_name)
 b_team_safe = html_lib.escape(team_b_name)
 lead_text = "同点です。次の1本が熱いです。" if a_total == b_total else f"{html_lib.escape(team_a_name if a_total > b_total else team_b_name)} がリード中"
@@ -982,12 +960,6 @@ st.markdown(
         text-align: center;
         min-height: 142px;
         backdrop-filter: blur(16px);
-    }}
-    .score-card.leader {{
-        box-shadow:
-            0 24px 60px rgba(15,23,42,.12),
-            0 0 0 3px rgba(249,115,22,.42),
-            0 0 28px rgba(249,115,22,.24);
     }}
     .score-card::before {{
         content: "";
@@ -1030,15 +1002,6 @@ st.markdown(
         line-height: .92;
         letter-spacing: -0.07em;
         color: #0f172a;
-        transition: transform .2s ease;
-    }}
-    .score-point.updated {{
-        animation: scorePop .32s ease;
-    }}
-    @keyframes scorePop {{
-        0% {{ transform: scale(1); }}
-        45% {{ transform: scale(1.16); }}
-        100% {{ transform: scale(1); }}
     }}
     .score-unit {{
         font-size: 16px;
@@ -1065,7 +1028,6 @@ st.markdown(
     @media (max-width: 768px) {{
         .score-board {{ grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr); gap: 6px; }}
         .score-card {{ min-height: 100px; padding: 12px 6px; border-radius: 20px; }}
-        .score-card.leader {{ box-shadow: 0 0 0 2px rgba(249,115,22,.55) !important; }}
         .team-badge {{ min-width: 58px; padding: 4px 8px; font-size: 10px; margin-bottom: 6px; }}
         .score-team-name {{ font-size: 13px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
         .score-point {{ font-size: 36px; }}
@@ -1077,27 +1039,24 @@ st.markdown(
     </style>
 
     <div class="score-board">
-        <div class="score-card red{a_leader}">
+        <div class="score-card red">
             <div class="team-badge">TEAM A</div>
             <div class="score-team-name">{a_team_safe}</div>
-            <div><span class="score-point{a_updated}">{a_total}</span><span class="score-unit">点</span></div>
+            <div><span class="score-point">{a_total}</span><span class="score-unit">点</span></div>
         </div>
         <div class="versus-card">
             <div class="versus-main">VS</div>
             <div class="versus-sub">{lead_text}</div>
         </div>
-        <div class="score-card blue{b_leader}">
+        <div class="score-card blue">
             <div class="team-badge">TEAM B</div>
             <div class="score-team-name">{b_team_safe}</div>
-            <div><span class="score-point{b_updated}">{b_total}</span><span class="score-unit">点</span></div>
+            <div><span class="score-point">{b_total}</span><span class="score-unit">点</span></div>
         </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
-
-st.session_state["prev_a_total"] = a_total
-st.session_state["prev_b_total"] = b_total
 
 st.markdown(
     '<div class="hint-card">💡 灰色セルをクリックすると入力画面が開きます。PDF出力前にチーム名と得点を確認してください。</div>',
@@ -1106,13 +1065,13 @@ st.markdown(
 
 score_range = st.radio(
     "表示範囲",
-    RANGE_OPTIONS,
+    ["🏀 1〜80点", "🔥 81〜160点"],
     horizontal=True,
     key="score_range_mode",
     label_visibility="collapsed",
 )
 
-if score_range == RANGE_OPTIONS[0]:
+if score_range == "🏀 1〜80点":
     start_block = 0
     end_block = 2
 else:
@@ -1128,18 +1087,17 @@ clicked_cell = click_detector(
     key=f"score_click_{score_range}_{st.session_state.click_nonce}",
 )
 
-inject_scroll_to_selected_cell()
-
 if (
     clicked_cell in st.session_state.scores
     and not st.session_state.show_score_dialog
 ):
+    # クリックされたセルに応じて表示範囲も保持
     try:
         score_no = int(clicked_cell.split("_")[1])
         if score_no <= 80:
-            st.session_state.score_range_mode = RANGE_OPTIONS[0]
+            st.session_state.score_range_mode = "🏀 1〜80点"
         else:
-            st.session_state.score_range_mode = RANGE_OPTIONS[1]
+            st.session_state.score_range_mode = "🔥 81〜160点"
     except Exception:
         pass
 
@@ -1150,35 +1108,27 @@ if st.session_state.show_score_dialog and st.session_state.dialog_cell:
 
 st.divider()
 
-st.markdown("### 📄 PDF出力")
-if st.button("PDFを作成", type="primary", width="stretch"):
-    try:
-        pdf_buffer = create_score_sheet_pdf(team_a_name, team_b_name)
-        st.session_state.pdf_data = pdf_buffer.getvalue()
-        st.success("PDFを作成しました。下のボタンからダウンロードできます。")
-    except FileNotFoundError as e:
-        st.warning(str(e))
-    except Exception as e:
-        st.error(f"PDF作成に失敗しました: {e}")
-
-if st.session_state.get("pdf_data"):
+try:
+    pdf_buffer = create_score_sheet_pdf(team_a_name, team_b_name)
     st.download_button(
         "📄 PDFをダウンロード",
-        data=st.session_state.pdf_data,
+        data=pdf_buffer,
         file_name="score_sheet.pdf",
         mime="application/pdf",
         width="stretch",
     )
+except FileNotFoundError as e:
+    st.warning(str(e))
+except Exception as e:
+    st.error(f"PDF作成に失敗しました: {e}")
 
 st.divider()
 
 if st.button("🧹 入力をすべてリセット", type="secondary"):
     st.session_state.scores = default_scores()
     st.session_state.selected_cell = ""
-    st.session_state.score_range_mode = RANGE_OPTIONS[0]
     save_scores()
-    invalidate_pdf_data()
     close_score_dialog()
     st.rerun()
 
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
