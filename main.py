@@ -240,14 +240,14 @@ def inject_global_style():
 
         @media (max-width: 768px) {
             .block-container {
-                padding-top: 116px !important;
+                padding-top: 138px !important;
                 padding-left: .55rem !important;
                 padding-right: .55rem !important;
             }
 
             .score-board {
                 position: fixed !important;
-                top: 6px !important;
+                top: 28px !important;
                 left: 8px !important;
                 right: 8px !important;
                 z-index: 99999 !important;
@@ -322,7 +322,6 @@ def inject_global_style():
         button[aria-label="Close"] {
             display: none !important;
         }
-        
         </style>
         """,
         unsafe_allow_html=True,
@@ -1064,37 +1063,44 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab1, tab2 = st.tabs(["🏀 1〜80点", "🔥 81〜160点"])
+score_range = st.radio(
+    "表示範囲",
+    ["🏀 1〜80点", "🔥 81〜160点"],
+    horizontal=True,
+    key="score_range_mode",
+    label_visibility="collapsed",
+)
 
-clicked_cell = None
+if score_range == "🏀 1〜80点":
+    start_block = 0
+    end_block = 2
+else:
+    start_block = 2
+    end_block = 4
 
-with tab1:
-    clicked_cell_1 = click_detector(
-        make_running_score_html(
-            st.session_state.selected_cell,
-            start_block=0,
-            end_block=2,
-        ),
-        key=f"score_click_1_{st.session_state.click_nonce}",
-    )
+clicked_cell = click_detector(
+    make_running_score_html(
+        st.session_state.selected_cell,
+        start_block=start_block,
+        end_block=end_block,
+    ),
+    key=f"score_click_{score_range}_{st.session_state.click_nonce}",
+)
 
-with tab2:
-    clicked_cell_2 = click_detector(
-        make_running_score_html(
-            st.session_state.selected_cell,
-            start_block=2,
-            end_block=4,
-        ),
-        key=f"score_click_2_{st.session_state.click_nonce}",
-    )
-
-clicked_cell = clicked_cell_1 or clicked_cell_2
-
-# ⭐ ここを修正（超重要）
 if (
     clicked_cell in st.session_state.scores
     and not st.session_state.show_score_dialog
 ):
+    # クリックされたセルに応じて表示範囲も保持
+    try:
+        score_no = int(clicked_cell.split("_")[1])
+        if score_no <= 80:
+            st.session_state.score_range_mode = "🏀 1〜80点"
+        else:
+            st.session_state.score_range_mode = "🔥 81〜160点"
+    except Exception:
+        pass
+
     open_score_dialog(clicked_cell)
 
 if st.session_state.show_score_dialog and st.session_state.dialog_cell:
