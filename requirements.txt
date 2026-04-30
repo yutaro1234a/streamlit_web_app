@@ -5,3 +5,5 @@ opencv-python-headless==4.10.0.84
 pillow
 pytesseract
 reportlab==4.0.9
+streamlit-cookies-controller==26.1
+st-click-detector==0.1.3

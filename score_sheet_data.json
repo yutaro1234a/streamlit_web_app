@@ -80,19 +80,19 @@
     "number": ""
   },
   "A_9": {
-    "mark": "",
+    "mark": "2点",
     "class": "初級",
-    "number": ""
+    "number": "1"
   },
   "B_9": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "3点",
+    "class": "中級",
+    "number": "22"
   },
   "A_10": {
-    "mark": "",
+    "mark": "1点",
     "class": "初級",
-    "number": ""
+    "number": "1"
   },
   "B_10": {
     "mark": "",
@@ -110,14 +110,14 @@
     "number": ""
   },
   "A_12": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "2点",
+    "class": "中級",
+    "number": "11"
   },
   "B_12": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "3点",
+    "class": "中級",
+    "number": "22"
   },
   "A_13": {
     "mark": "",
@@ -130,14 +130,14 @@
     "number": ""
   },
   "A_14": {
-    "mark": "",
+    "mark": "2点",
     "class": "初級",
-    "number": ""
+    "number": "1"
   },
   "B_14": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "2点",
+    "class": "中級",
+    "number": "22"
   },
   "A_15": {
     "mark": "",
@@ -800,9 +800,9 @@
     "number": ""
   },
   "A_81": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "1点",
+    "class": "中級",
+    "number": "11"
   },
   "B_81": {
     "mark": "",
@@ -815,9 +815,9 @@
     "number": ""
   },
   "B_82": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "2点",
+    "class": "中級",
+    "number": "22"
   },
   "A_83": {
     "mark": "",
@@ -830,9 +830,9 @@
     "number": ""
   },
   "A_84": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "3点",
+    "class": "中級",
+    "number": "11"
   },
   "B_84": {
     "mark": "",
