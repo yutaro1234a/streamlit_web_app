@@ -1,9 +1,9 @@
 streamlit==1.49.1
 numpy==1.26.4
 pandas==2.2.2
-opencv-python-headless==4.10.0.84
+opencv-python-headless==4.9.0.80
 pillow
 pytesseract
 reportlab==4.0.9
-streamlit-cookies-controller==26.1
+streamlit-cookies-controller
 st-click-detector==0.1.3
