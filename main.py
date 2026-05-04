@@ -532,7 +532,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html = ""
 
     html += "<style>"
-    html += ".score-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; border-radius: 30px; background: rgba(255,255,255,.76); border: 1px solid rgba(255,255,255,.78); box-shadow: 0 22px 60px rgba(15,23,42,.12); backdrop-filter: blur(16px); }"
+    html += ".score-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px 64px; border-radius: 30px; background: rgba(255,255,255,.76); border: 1px solid rgba(255,255,255,.78); box-shadow: 0 22px 60px rgba(15,23,42,.12); backdrop-filter: blur(16px); }"
     html += ".score-title-main { text-align: center; font-size: 15px; font-weight: 950; letter-spacing: .12em; padding: 13px; border: 1px solid rgba(255,255,255,.18); border-radius: 20px; background: linear-gradient(135deg, #0f172a, #1e293b 48%, #334155); color: white; margin-bottom: 14px; box-shadow: 0 14px 28px rgba(15,23,42,.20); }"
     html += ".score-block-row { display: flex; gap: 12px; align-items: flex-start; justify-content: flex-start; }"
     html += ".score-block-table { border-collapse: separate; border-spacing: 0; font-family: 'Noto Sans JP', Inter, Arial, sans-serif; font-size: 13px; text-align: center; background: white; color: #0f172a; border: 1px solid rgba(15,23,42,.12); border-radius: 18px; overflow: hidden; box-shadow: 0 14px 32px rgba(15,23,42,.08); }"
@@ -551,7 +551,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".class-advanced { color: #16a34a !important; }"
     
     html += "@media (max-width: 768px) {"
-    html += ".score-wrap { overflow-x: hidden; padding: 12px 12px 12px 54px; border-radius: 22px; }"
+    html += ".score-wrap { overflow-x: auto; padding: 12px 64px; border-radius: 22px; }"
     html += ".score-block-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; }"
     html += ".score-block-table { width: calc(50% - 6px); font-size: 11px; border-radius: 15px; }"
     html += ".score-block-table th, .score-block-table td { width: 34px; height: 26px; }"
