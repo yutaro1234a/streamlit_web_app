@@ -534,7 +534,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += "<style>"
     html += ".score-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; border-radius: 30px; background: rgba(255,255,255,.76); border: 1px solid rgba(255,255,255,.78); box-shadow: 0 22px 60px rgba(15,23,42,.12); backdrop-filter: blur(16px); }"
     html += ".score-title-main { text-align: center; font-size: 15px; font-weight: 950; letter-spacing: .12em; padding: 13px; border: 1px solid rgba(255,255,255,.18); border-radius: 20px; background: linear-gradient(135deg, #0f172a, #1e293b 48%, #334155); color: white; margin-bottom: 14px; box-shadow: 0 14px 28px rgba(15,23,42,.20); }"
-    html += ".score-block-row { display: flex; gap: 12px; align-items: flex-start; justify-content: center; }"
+    html += ".score-block-row { display: flex; gap: 12px; align-items: flex-start; justify-content: flex-start; }"
     html += ".score-block-table { border-collapse: separate; border-spacing: 0; font-family: 'Noto Sans JP', Inter, Arial, sans-serif; font-size: 13px; text-align: center; background: white; color: #0f172a; border: 1px solid rgba(15,23,42,.12); border-radius: 18px; overflow: hidden; box-shadow: 0 14px 32px rgba(15,23,42,.08); }"
     html += ".score-block-table th, .score-block-table td { border-right: 1px solid rgba(15,23,42,.12); border-bottom: 1px solid rgba(15,23,42,.12); width: 46px; height: 32px; padding: 0; }"
     html += ".score-block-table tr:last-child td { border-bottom: 0; }"
@@ -552,7 +552,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     
     html += "@media (max-width: 768px) {"
     html += ".score-wrap { overflow-x: hidden; padding: 12px 12px 12px 54px; border-radius: 22px; }"
-    html += ".score-block-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }"
+    html += ".score-block-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; }"
     html += ".score-block-table { width: calc(50% - 6px); font-size: 11px; border-radius: 15px; }"
     html += ".score-block-table th, .score-block-table td { width: 34px; height: 26px; }"
     html += ".input-cell { font-size: 14px; }"
@@ -906,58 +906,59 @@ def score_dialog(cell_key: str):
         unsafe_allow_html=True,
     )
 
-    # 入力対象ヘッダー + 閉じるボタン
-    header_col, close_col = st.columns([9, 1])
-    with header_col:
-        st.markdown(
-            f"""
-            <div style="
-                position:relative;
-                overflow:hidden;
-                margin:0 0 14px 0;
-                padding:16px 18px;
-                border-radius:24px;
-                background:
-                    radial-gradient(circle at 12% 18%, rgba(255,255,255,.92), transparent 7rem),
-                    linear-gradient(135deg, #fb923c 0%, #f97316 46%, #ea580c 100%);
-                box-shadow:0 18px 34px rgba(234,88,12,.28), 0 8px 18px rgba(15,23,42,.10);
-                color:white;
-            ">
-                <div style="
-                    position:absolute;
-                    right:-18px;
-                    top:-26px;
-                    font-size:86px;
-                    opacity:.18;
-                    transform:rotate(-14deg);
-                ">🏀</div>
-                <div style="
-                    position:relative;
-                    font-size:12px;
-                    font-weight:950;
-                    letter-spacing:.14em;
-                    opacity:.92;
-                    margin-bottom:5px;
-                ">
-                    SCORE ENTRY
-                </div>
-                <div style="
-                    position:relative;
-                    font-size:24px;
-                    font-weight:1000;
-                    line-height:1.2;
-                    letter-spacing:-.03em;
-                ">
-                    入力対象：{team}　スコア{score_no_int}点目
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with close_col:
-        if st.button("✕", width="stretch", key=f"dialog_close_{cell_key}"):
+    # 閉じるボタンを入力対象ヘッダーより上に表示
+    close_col1, close_col2, close_col3 = st.columns([1, 1, 1])
+    with close_col3:
+        if st.button("閉じる", width="stretch", key=f"dialog_close_{cell_key}"):
             close_score_dialog()
             st.rerun()
+
+    # 入力対象ヘッダー
+    st.markdown(
+        f"""
+        <div style="
+            position:relative;
+            overflow:hidden;
+            margin:0 0 14px 0;
+            padding:16px 18px;
+            border-radius:24px;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255,255,255,.92), transparent 7rem),
+                linear-gradient(135deg, #fb923c 0%, #f97316 46%, #ea580c 100%);
+            box-shadow:0 18px 34px rgba(234,88,12,.28), 0 8px 18px rgba(15,23,42,.10);
+            color:white;
+        ">
+            <div style="
+                position:absolute;
+                right:-18px;
+                top:-26px;
+                font-size:86px;
+                opacity:.18;
+                transform:rotate(-14deg);
+            ">🏀</div>
+            <div style="
+                position:relative;
+                font-size:12px;
+                font-weight:950;
+                letter-spacing:.14em;
+                opacity:.92;
+                margin-bottom:5px;
+            ">
+                SCORE ENTRY
+            </div>
+            <div style="
+                position:relative;
+                font-size:24px;
+                font-weight:1000;
+                line-height:1.2;
+                letter-spacing:-.03em;
+            ">
+                入力対象：{team}　スコア{score_no_int}点目
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     mark_options = ["2点", "3点", "1点"]
     default_mark = data["mark"] if data["mark"] else "2点"
