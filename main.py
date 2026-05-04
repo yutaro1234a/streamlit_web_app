@@ -322,74 +322,6 @@ def inject_global_style():
         button[aria-label="Close"] {
             display: none !important;
         }
-
-
-        /* ===== 表示範囲ラジオ専用：タブ風UI ===== */
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
-            width: 100% !important;
-            padding: 8px !important;
-            border-radius: 999px !important;
-            background: rgba(241, 245, 249, 0.95) !important;
-            border: 1px solid rgba(15, 23, 42, 0.08) !important;
-            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.08) !important;
-        }
-
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label {
-            width: 100% !important;
-            min-height: 54px !important;
-            margin: 0 !important;
-            padding: 0 16px !important;
-            border-radius: 999px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            cursor: pointer !important;
-            transition: all 0.25s ease !important;
-            color: #64748b !important;
-            font-weight: 900 !important;
-        }
-
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label > div:first-child {
-            display: none !important;
-        }
-
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label p {
-            margin: 0 !important;
-            font-size: 16px !important;
-            font-weight: 900 !important;
-            letter-spacing: 0.02em !important;
-            color: inherit !important;
-        }
-
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label:has(input:checked) {
-            color: #ffffff !important;
-            background: linear-gradient(135deg, #ff8a00 0%, #ff3d6e 100%) !important;
-            box-shadow: 0 12px 24px rgba(255, 92, 80, 0.35) !important;
-            transform: translateY(-1px) !important;
-        }
-
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label:hover {
-            transform: translateY(-1px) !important;
-        }
-
-        @media (max-width: 768px) {
-            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] {
-                gap: 6px !important;
-                padding: 6px !important;
-            }
-
-            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label {
-                min-height: 46px !important;
-                padding: 0 8px !important;
-            }
-
-            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label p {
-                font-size: 13px !important;
-            }
-        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -530,6 +462,9 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".input-cell { background: linear-gradient(135deg, #f8fafc, #e2e8f0); cursor: pointer; font-weight: 950; font-size: 18px; transition: transform .14s ease, box-shadow .14s ease, filter .14s ease; }"
     html += ".input-cell:hover { transform: scale(1.045); filter: brightness(1.02); box-shadow: inset 0 0 0 2px rgba(249,115,22,.62); }"
     html += ".input-cell a { display: block; width: 100%; height: 100%; color: inherit; text-decoration: none; line-height: 32px; }"
+    html += ".input-cell a.longpress-ready { -webkit-touch-callout: none; user-select: none; touch-action: pan-y; }"
+    html += ".input-cell.longpress-pressing { transform: scale(.96); filter: brightness(.98); box-shadow: inset 0 0 0 3px rgba(249,115,22,.85); }"
+    html += ".longpress-hint { display: none; text-align: center; margin: 8px 0 10px; color: #9a3412; font-weight: 900; font-size: 12px; }"
     html += ".selected-cell { background: linear-gradient(135deg, #fed7aa, #fb923c) !important; outline: 3px solid #ea580c; outline-offset: -3px; }"
     html += ".cell-one { background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important; }"
     html += ".cell-two { background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important; }"
@@ -549,6 +484,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".score-no { font-size: 10px; }"
     html += ".score-mark { top: 0px; font-size: 17px; }"
     html += ".score-title-main { font-size: 12px; padding: 9px; }"
+    html += ".longpress-hint { display: block; }"
     html += "}"
     html += "</style>"
 
@@ -575,6 +511,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
 
     html += '<div class="score-wrap">'
     html += '<div class="score-title-main">ランニングスコア　RUNNING SCORE</div>'
+    html += '<div class="longpress-hint">📱 スマホではセルを長押しすると入力できます</div>'
     html += '<div class="score-block-row">'
 
     for block in range(start_block, end_block):
@@ -618,7 +555,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
             html += "<tr>"
             html += (
                 f'<td class="{a_class} {a_color_class}">'
-                f'<a href="#" id="{a_key}">{html_lib.escape(str(a_text))}</a>'
+                f'<a href="#" id="{a_key}" class="longpress-ready">{html_lib.escape(str(a_text))}</a>'
                 f"</td>"
             )
             html += (
@@ -631,7 +568,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
             )
             html += (
                 f'<td class="{b_class} {b_color_class}">'
-                f'<a href="#" id="{b_key}">{html_lib.escape(str(b_text))}</a>'
+                f'<a href="#" id="{b_key}" class="longpress-ready">{html_lib.escape(str(b_text))}</a>'
                 f"</td>"
             )
             html += "</tr>"
@@ -640,6 +577,110 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
 
     html += "</div>"
     html += "</div>"
+
+    html += """
+    <script>
+    (function() {
+        const LONG_PRESS_MS = 550;
+        let timer = null;
+        let startX = 0;
+        let startY = 0;
+        let activeLink = null;
+        let longPressFired = false;
+
+        function isTouchDevice() {
+            return window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+        }
+
+        function clearPressState() {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            if (activeLink) {
+                const td = activeLink.closest(".input-cell");
+                if (td) td.classList.remove("longpress-pressing");
+            }
+            activeLink = null;
+        }
+
+        document.addEventListener("contextmenu", function(e) {
+            const link = e.target.closest("a.longpress-ready");
+            if (link && isTouchDevice()) {
+                e.preventDefault();
+            }
+        }, true);
+
+        document.addEventListener("touchstart", function(e) {
+            const link = e.target.closest("a.longpress-ready");
+            if (!link) return;
+
+            longPressFired = false;
+            activeLink = link;
+
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+
+            const td = link.closest(".input-cell");
+            if (td) td.classList.add("longpress-pressing");
+
+            timer = setTimeout(function() {
+                longPressFired = true;
+                link.dataset.longpressAllowed = "1";
+
+                const clickEvent = new MouseEvent("click", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                link.dispatchEvent(clickEvent);
+
+                setTimeout(function() {
+                    delete link.dataset.longpressAllowed;
+                }, 0);
+
+                clearPressState();
+            }, LONG_PRESS_MS);
+        }, { passive: true });
+
+        document.addEventListener("touchmove", function(e) {
+            if (!activeLink) return;
+            const touch = e.touches[0];
+            const movedX = Math.abs(touch.clientX - startX);
+            const movedY = Math.abs(touch.clientY - startY);
+
+            if (movedX > 8 || movedY > 8) {
+                clearPressState();
+            }
+        }, { passive: true });
+
+        document.addEventListener("touchend", function(e) {
+            const link = e.target.closest("a.longpress-ready");
+            const shouldBlockTap = link && isTouchDevice() && !longPressFired;
+
+            clearPressState();
+
+            if (shouldBlockTap) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            }
+        }, true);
+
+        document.addEventListener("click", function(e) {
+            const link = e.target.closest("a.longpress-ready");
+            if (!link || !isTouchDevice()) return;
+
+            if (link.dataset.longpressAllowed !== "1") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            }
+        }, true);
+    })();
+    </script>
+    """
 
     return html
 
