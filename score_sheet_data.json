@@ -150,14 +150,14 @@
     "number": ""
   },
   "A_16": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "2点",
+    "class": "中級",
+    "number": "3"
   },
   "B_16": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "2点",
+    "class": "上級",
+    "number": "3"
   },
   "A_17": {
     "mark": "",
@@ -170,9 +170,9 @@
     "number": ""
   },
   "A_18": {
-    "mark": "",
+    "mark": "2点",
     "class": "初級",
-    "number": ""
+    "number": "7"
   },
   "B_18": {
     "mark": "",
@@ -185,9 +185,9 @@
     "number": ""
   },
   "B_19": {
-    "mark": "",
-    "class": "初級",
-    "number": ""
+    "mark": "3点",
+    "class": "上級",
+    "number": "4"
   },
   "A_20": {
     "mark": "",
@@ -200,14 +200,14 @@
     "number": ""
   },
   "A_21": {
+    "mark": "3点",
+    "class": "初級",
+    "number": "50"
+  },
+  "B_21": {
     "mark": "",
     "class": "初級",
     "number": ""
-  },
-  "B_21": {
-    "mark": "2点",
-    "class": "初級",
-    "number": "1"
   },
   "A_22": {
     "mark": "",
@@ -225,9 +225,9 @@
     "number": ""
   },
   "B_23": {
-    "mark": "2点",
-    "class": "初級",
-    "number": "1"
+    "mark": "1点",
+    "class": "中級",
+    "number": "51"
   },
   "A_24": {
     "mark": "",
@@ -255,9 +255,9 @@
     "number": ""
   },
   "B_26": {
-    "mark": "2点",
+    "mark": "",
     "class": "初級",
-    "number": "1"
+    "number": ""
   },
   "A_27": {
     "mark": "",
@@ -800,9 +800,9 @@
     "number": ""
   },
   "A_81": {
-    "mark": "1点",
-    "class": "中級",
-    "number": "11"
+    "mark": "",
+    "class": "初級",
+    "number": ""
   },
   "B_81": {
     "mark": "",
@@ -815,9 +815,9 @@
     "number": ""
   },
   "B_82": {
-    "mark": "2点",
-    "class": "中級",
-    "number": "22"
+    "mark": "",
+    "class": "初級",
+    "number": ""
   },
   "A_83": {
     "mark": "",
@@ -830,9 +830,9 @@
     "number": ""
   },
   "A_84": {
-    "mark": "3点",
-    "class": "中級",
-    "number": "11"
+    "mark": "",
+    "class": "初級",
+    "number": ""
   },
   "B_84": {
     "mark": "",

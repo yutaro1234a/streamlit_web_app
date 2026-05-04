@@ -70,12 +70,12 @@ def require_login() -> None:
         return
     try:
         if hasattr(st, "switch_page"):
-            st.switch_page("pages/00_ログイン.py")
+            st.switch_page("pages/_login.py")
             return
     except Exception:
         pass
     st.warning("このページを表示するにはログインが必要です。")
-    st.markdown('<a href="/?page=00_%E3%83%AD%E3%82%B0%E3%82%A4%E3%83%B3" target="_self">➡️ ログインページへ</a>', unsafe_allow_html=True)
+    st.markdown('<a href="/?page=_login.py" target="_self">➡️ ログインページへ</a>', unsafe_allow_html=True)
     st.stop()
 
 def require_admin() -> None:

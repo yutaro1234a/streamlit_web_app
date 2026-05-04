@@ -6,4 +6,5 @@ pillow
 pytesseract
 reportlab==4.0.9
 streamlit-cookies-controller
+streamlit-cookies-manager
 st-click-detector==0.1.3

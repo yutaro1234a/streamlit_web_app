@@ -1,0 +1,50 @@
+[
+  {
+    "id": 14,
+    "uniform_number": "1",
+    "player_name": "a",
+    "team": "Red",
+    "bibs_type": "ドバスOriginal",
+    "class_type": "初級"
+  },
+  {
+    "id": 15,
+    "uniform_number": "1",
+    "player_name": "b",
+    "team": "Blue",
+    "bibs_type": "ドバスOriginal",
+    "class_type": "初級"
+  },
+  {
+    "id": 16,
+    "uniform_number": "11",
+    "player_name": "aaa",
+    "team": "Red",
+    "bibs_type": "ドバスOriginal",
+    "class_type": "中級"
+  },
+  {
+    "id": 18,
+    "uniform_number": "22",
+    "player_name": "bb",
+    "team": "Blue",
+    "bibs_type": "ドバスOriginal",
+    "class_type": "中級"
+  },
+  {
+    "id": 19,
+    "uniform_number": "33",
+    "player_name": "yamda",
+    "team": "Red",
+    "bibs_type": "ドバスOriginal",
+    "class_type": "上級"
+  },
+  {
+    "id": 20,
+    "uniform_number": "44",
+    "player_name": "yamoto",
+    "team": "Blue",
+    "bibs_type": "ドバスOriginal",
+    "class_type": "上級"
+  }
+]

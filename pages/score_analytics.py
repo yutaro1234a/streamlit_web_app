@@ -16,6 +16,16 @@ from app_auth import require_login, render_userbox
 # =========================
 st.set_page_config(page_title="📊 スコア集計", layout="wide")
 
+st.markdown("""
+<style>
+[data-testid="stSidebarNav"] a[href*="_login"],
+[data-testid="stSidebarNav"] a[href*="%5Flogin"],
+[data-testid="stSidebarNav"] a[href*="login"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 require_login()
 render_userbox()
 
@@ -53,10 +63,16 @@ def inject_style():
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800;900&display=swap');
 
         :root {
-            --card: rgba(255, 255, 255, .84);
-            --line: rgba(226, 232, 240, .88);
-            --text: #0f172a;
+            --bg0: #eef2ff;
+            --bg1: #f8fafc;
+            --ink: #0f172a;
             --muted: #64748b;
+            --line: rgba(148, 163, 184, .22);
+            --glass: rgba(255,255,255,.72);
+            --glass-strong: rgba(255,255,255,.88);
+            --red: #ef4444;
+            --blue: #2563eb;
+            --gold: #f59e0b;
         }
 
         html, body, [class*="css"] {
@@ -64,34 +80,41 @@ def inject_style():
         }
 
         .stApp {
+            color: var(--ink);
             background:
-                radial-gradient(circle at 8% 8%, rgba(239, 68, 68, .14), transparent 28%),
-                radial-gradient(circle at 92% 12%, rgba(37, 99, 235, .16), transparent 30%),
-                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+                radial-gradient(circle at 12% 8%, rgba(239,68,68,.22), transparent 26%),
+                radial-gradient(circle at 88% 5%, rgba(37,99,235,.24), transparent 28%),
+                radial-gradient(circle at 52% 40%, rgba(168,85,247,.12), transparent 30%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
         }
 
         .block-container {
-            padding-top: 1.25rem;
+            padding-top: 1.1rem;
             padding-bottom: 3rem;
-            max-width: 1220px;
+            max-width: 1240px;
+            animation: pageFadeIn .35s ease-out;
+        }
+
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         h1, h2, h3 { letter-spacing: .02em; }
-
         div[data-testid="stVerticalBlock"] { gap: .8rem; }
 
         .summary-hero {
             position: relative;
             overflow: hidden;
-            border-radius: 30px;
-            padding: 28px 30px;
-            margin: 6px 0 18px 0;
+            border-radius: 34px;
+            padding: 34px 34px;
+            margin: 4px 0 18px 0;
             color: #fff;
             background:
-                radial-gradient(circle at 18% 0%, rgba(255,255,255,.32), transparent 28%),
-                radial-gradient(circle at 82% 18%, rgba(96,165,250,.42), transparent 24%),
-                linear-gradient(135deg, #0f172a 0%, #1e293b 48%, #334155 100%);
-            box-shadow: 0 22px 60px rgba(15, 23, 42, .26);
+                radial-gradient(circle at 18% 0%, rgba(255,255,255,.33), transparent 28%),
+                radial-gradient(circle at 84% 14%, rgba(59,130,246,.48), transparent 28%),
+                linear-gradient(135deg, #020617 0%, #111827 45%, #1e3a8a 100%);
+            box-shadow: 0 28px 70px rgba(15, 23, 42, .30);
             isolation: isolate;
         }
 
@@ -100,87 +123,98 @@ def inject_style():
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
-            background-size: 34px 34px;
-            mask-image: linear-gradient(90deg, rgba(0,0,0,.7), transparent 78%);
+                linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px);
+            background-size: 36px 36px;
+            mask-image: linear-gradient(90deg, rgba(0,0,0,.85), transparent 80%);
             z-index: -1;
         }
 
         .summary-hero::after {
             content: "🏀";
             position: absolute;
-            right: 28px;
-            top: 22px;
-            font-size: 74px;
-            opacity: .18;
-            transform: rotate(-12deg);
+            right: 32px;
+            top: 20px;
+            font-size: 92px;
+            opacity: .17;
+            transform: rotate(-14deg);
         }
 
         .hero-kicker {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            padding: 6px 12px;
+            gap: 8px;
+            padding: 7px 13px;
             border-radius: 999px;
-            background: rgba(255,255,255,.16);
+            background: rgba(255,255,255,.15);
             border: 1px solid rgba(255,255,255,.24);
             font-size: 12px;
-            font-weight: 900;
-            margin-bottom: 12px;
-            backdrop-filter: blur(10px);
+            font-weight: 950;
+            letter-spacing: .10em;
+            margin-bottom: 14px;
+            backdrop-filter: blur(12px);
         }
 
         .hero-title {
-            font-size: clamp(28px, 4vw, 42px);
+            font-size: clamp(31px, 4.2vw, 48px);
             font-weight: 950;
-            line-height: 1.12;
+            line-height: 1.08;
             margin: 0;
         }
 
         .hero-subtitle {
             color: rgba(255,255,255,.78);
             font-size: 14px;
-            margin-top: 10px;
+            margin-top: 12px;
+            font-weight: 700;
         }
 
         .score-board {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 130px minmax(0, 1fr);
-            gap: 14px;
-            margin: 12px 0 14px 0;
+            grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr);
+            gap: 16px;
+            margin: 12px 0 16px 0;
             align-items: stretch;
+        }
+
+        .score-card, .score-vs, .section-card, .rank-card, .class-card {
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
         }
 
         .score-card {
             min-width: 0;
             position: relative;
             overflow: hidden;
-            border-radius: 26px;
-            padding: 20px 20px 18px 20px;
-            background: var(--card);
-            border: 1px solid rgba(255,255,255,.78);
-            box-shadow: 0 16px 38px rgba(15, 23, 42, .11);
+            border-radius: 30px;
+            padding: 24px 22px 21px 22px;
+            background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.70));
+            border: 1px solid rgba(255,255,255,.88);
+            box-shadow: 0 18px 48px rgba(15, 23, 42, .12);
             text-align: center;
-            backdrop-filter: blur(14px);
+            backdrop-filter: blur(18px);
+        }
+
+        .score-card:hover, .rank-card:hover, .class-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .16);
         }
 
         .score-card::before {
             content: "";
             position: absolute;
             inset: 0 0 auto 0;
-            height: 7px;
+            height: 8px;
         }
 
         .score-card::after {
             content: "";
             position: absolute;
-            right: -46px;
-            bottom: -60px;
-            width: 150px;
-            height: 150px;
+            right: -54px;
+            bottom: -68px;
+            width: 170px;
+            height: 170px;
             border-radius: 999px;
-            opacity: .08;
+            opacity: .10;
         }
 
         .score-card.red::before { background: linear-gradient(90deg, #ef4444, #fb7185); }
@@ -189,9 +223,8 @@ def inject_style():
         .score-card.blue::after { background: #2563eb; }
 
         .score-card.winner {
-            border-color: rgba(245, 158, 11, .75);
-            box-shadow: 0 18px 44px rgba(245, 158, 11, .22);
-            transform: translateY(-1px);
+            border-color: rgba(245, 158, 11, .82);
+            box-shadow: 0 22px 58px rgba(245, 158, 11, .22);
         }
 
         .score-team-label {
@@ -199,20 +232,20 @@ def inject_style():
             align-items: center;
             justify-content: center;
             border-radius: 999px;
-            padding: 5px 13px;
+            padding: 6px 14px;
             font-size: 11px;
             font-weight: 950;
             color: #fff;
-            letter-spacing: .08em;
-            margin-bottom: 9px;
+            letter-spacing: .10em;
+            margin-bottom: 10px;
         }
 
         .red-label { background: linear-gradient(135deg, #dc2626, #fb7185); }
-        .blue-label { background: linear-gradient(135deg, #2563eb, #38bdf8); }
+        .blue-label { background: linear-gradient(135deg, #1d4ed8, #38bdf8); }
 
         .score-team-name {
-            font-size: 18px;
-            font-weight: 900;
+            font-size: 19px;
+            font-weight: 950;
             color: #111827;
             margin-bottom: 8px;
             white-space: nowrap;
@@ -221,207 +254,87 @@ def inject_style():
         }
 
         .score-point {
-            font-size: clamp(42px, 6vw, 62px);
+            font-size: clamp(46px, 6vw, 66px);
             font-weight: 950;
             line-height: 1;
-            color: #0f172a;
+            color: #020617;
             font-variant-numeric: tabular-nums;
         }
 
         .score-unit {
-            font-size: 16px;
-            font-weight: 900;
+            font-size: 15px;
+            font-weight: 950;
             margin-left: 4px;
             color: #475569;
         }
 
         .score-vs {
-            border-radius: 26px;
-            background: rgba(255,255,255,.78);
-            border: 1px solid rgba(255,255,255,.88);
-            box-shadow: 0 14px 32px rgba(15, 23, 42, .08);
+            border-radius: 30px;
+            background: rgba(255,255,255,.75);
+            border: 1px solid rgba(255,255,255,.9);
+            box-shadow: 0 18px 44px rgba(15, 23, 42, .10);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             padding: 12px 8px;
-            backdrop-filter: blur(14px);
+            backdrop-filter: blur(18px);
         }
 
         .score-vs-main {
-            width: 58px;
-            height: 58px;
-            border-radius: 999px;
+            width: 62px;
+            height: 62px;
+            border-radius: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #0f172a;
+            background: linear-gradient(135deg, #020617, #334155);
             color: #fff;
             font-size: 18px;
             font-weight: 950;
-            letter-spacing: .06em;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, .20);
+            letter-spacing: .08em;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, .25);
         }
 
         .score-status {
             font-size: 12px;
-            font-weight: 850;
-            color: #475569;
-            margin-top: 9px;
+            font-weight: 950;
+            color: #334155;
+            margin-top: 10px;
             line-height: 1.35;
         }
 
-        .share-card {
-            border-radius: 22px;
-            padding: 16px 18px;
-            margin: 0 0 18px 0;
-            background: rgba(255,255,255,.78);
-            border: 1px solid rgba(255,255,255,.9);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
-            backdrop-filter: blur(14px);
-        }
-
-        .share-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #475569;
-            font-size: 12px;
-            font-weight: 900;
-            margin-bottom: 10px;
-        }
-
-        .share-track {
-            display: flex;
-            overflow: hidden;
-            height: 16px;
-            border-radius: 999px;
-            background: #e2e8f0;
-        }
-
-        .share-red { background: linear-gradient(90deg, #ef4444, #fb7185); }
-        .share-blue { background: linear-gradient(90deg, #2563eb, #38bdf8); }
-
-        .insight-grid {
-            display: grid;
-            grid-template-columns: 1.25fr 1fr 1fr;
-            gap: 14px;
-            margin: 6px 0 20px 0;
-        }
-
-        .insight-card {
+        .section-card {
             position: relative;
             overflow: hidden;
             border-radius: 26px;
-            padding: 20px 20px;
-            background: rgba(255,255,255,.86);
+            padding: 18px 20px;
+            margin: 20px 0 12px 0;
+            background: rgba(255,255,255,.78);
             border: 1px solid rgba(255,255,255,.92);
-            box-shadow: 0 14px 34px rgba(15, 23, 42, .09);
-            backdrop-filter: blur(14px);
-        }
-
-        .insight-card::after {
-            content: "";
-            position: absolute;
-            right: -42px;
-            bottom: -46px;
-            width: 128px;
-            height: 128px;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(37,99,235,.12), transparent 68%);
-        }
-
-        .insight-main::before {
-            content: "";
-            position: absolute;
-            inset: 0 auto 0 0;
-            width: 7px;
-            background: linear-gradient(180deg, #ef4444, #2563eb);
-        }
-
-        .insight-top {
+            box-shadow: 0 14px 36px rgba(15, 23, 42, .085);
+            backdrop-filter: blur(18px);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 16px;
         }
 
-        .insight-title {
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 950;
-            letter-spacing: .08em;
-        }
-
-        .insight-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: #f1f5f9;
-            font-size: 18px;
-        }
-
-        .insight-value {
-            color: #0f172a;
-            font-size: 30px;
-            font-weight: 950;
-            line-height: 1.05;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .insight-main .insight-value {
-            font-size: 34px;
-        }
-
-        .insight-note {
-            color: #94a3b8;
-            font-size: 12px;
-            margin-top: 9px;
-            font-weight: 800;
-        }
-
-        .insight-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 14px;
-        }
-
-        .insight-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+        .section-card::after {
+            content: "";
+            width: 96px;
+            height: 9px;
             border-radius: 999px;
-            padding: 6px 10px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            color: #475569;
-            font-size: 11px;
-            font-weight: 900;
-        }
-
-        .pill-red { color: #dc2626; background: #fff1f2; border-color: #fecdd3; }
-        .pill-blue { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
-
-        .section-card {
-            border-radius: 24px;
-            padding: 18px 20px 16px 20px;
-            margin: 18px 0 12px 0;
-            background: rgba(255,255,255,.82);
-            border: 1px solid rgba(255,255,255,.9);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
-            backdrop-filter: blur(14px);
+            background: linear-gradient(90deg, #ef4444, #2563eb);
+            opacity: .72;
+            flex: 0 0 auto;
         }
 
         .section-title {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 11px;
             font-size: 18px;
             font-weight: 950;
             color: #0f172a;
@@ -429,115 +342,95 @@ def inject_style():
         }
 
         .section-title span:first-child {
-            width: 34px;
-            height: 34px;
-            border-radius: 13px;
+            width: 38px;
+            height: 38px;
+            border-radius: 15px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #f1f5f9;
+            background: linear-gradient(180deg, #ffffff, #f1f5f9);
+            box-shadow: inset 0 0 0 1px rgba(148,163,184,.18);
         }
 
         .section-caption {
             color: #64748b;
             font-size: 13px;
-            margin-left: 44px;
-        }
-
-        div[data-testid="stDataFrame"] {
-            border-radius: 18px;
-            overflow: hidden;
-            border: 1px solid rgba(226,232,240,.92);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, .055);
-        }
-
-        div[data-baseweb="select"] > div {
-            border-radius: 16px;
-            border-color: #dbe3ef;
-            box-shadow: 0 7px 18px rgba(15, 23, 42, .06);
-            background-color: rgba(255,255,255,.9);
-        }
-
-        .stButton > button,
-        div[data-testid="stPageLink"] a {
-            border-radius: 999px !important;
-            font-weight: 900 !important;
-            border: 1px solid rgba(15, 23, 42, .10) !important;
-            box-shadow: 0 10px 22px rgba(15, 23, 42, .08) !important;
-        }
-
-        .empty-card {
-            border-radius: 28px;
-            padding: 42px 26px;
-            background:
-                radial-gradient(circle at top left, rgba(37, 99, 235, .15), transparent 35%),
-                linear-gradient(135deg, rgba(255,255,255,.9), rgba(248,250,252,.9));
-            border: 1px solid rgba(255,255,255,.9);
-            text-align: center;
-            box-shadow: 0 16px 42px rgba(15,23,42,.09);
-            backdrop-filter: blur(14px);
-        }
-
-        .empty-title {
-            font-size: 23px;
-            font-weight: 950;
-            color: #111827;
-            margin-bottom: 8px;
-        }
-
-        .empty-text {
-            color: #64748b;
-            font-size: 14px;
+            margin-left: 49px;
+            font-weight: 700;
         }
 
         .rank-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
+            grid-template-columns: 1.25fr 1fr 1fr;
+            gap: 14px;
             margin: 0 0 18px 0;
+            align-items: stretch;
         }
 
         .rank-card {
             display: flex;
             align-items: center;
-            gap: 12px;
-            border-radius: 22px;
-            padding: 15px 15px;
-            background: rgba(255,255,255,.82);
-            border: 1px solid rgba(255,255,255,.9);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
+            gap: 14px;
+            border-radius: 28px;
+            padding: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.72));
+            border: 1px solid rgba(255,255,255,.92);
+            box-shadow: 0 16px 42px rgba(15, 23, 42, .10);
             overflow: hidden;
             position: relative;
-            backdrop-filter: blur(14px);
+            backdrop-filter: blur(18px);
+        }
+
+        .rank-card:first-child {
+            background:
+                radial-gradient(circle at 12% 10%, rgba(245,158,11,.28), transparent 34%),
+                linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,251,235,.82));
+            border-color: rgba(245,158,11,.42);
+            box-shadow: 0 22px 60px rgba(245,158,11,.18);
         }
 
         .rank-card::before {
             content: "";
             position: absolute;
             inset: 0 auto 0 0;
-            width: 6px;
+            width: 7px;
+        }
+
+        .rank-card:first-child::after {
+            content: "MVP";
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: rgba(245,158,11,.16);
+            color: #92400e;
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: .12em;
         }
 
         .rank-red::before { background: linear-gradient(180deg, #ef4444, #fb7185); }
         .rank-blue::before { background: linear-gradient(180deg, #2563eb, #38bdf8); }
 
         .rank-medal {
-            width: 42px;
-            height: 42px;
-            border-radius: 16px;
+            width: 52px;
+            height: 52px;
+            border-radius: 19px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #f8fafc;
-            font-size: 22px;
+            font-size: 27px;
             flex: 0 0 auto;
+            box-shadow: inset 0 0 0 1px rgba(148,163,184,.15);
         }
 
         .rank-body { min-width: 0; flex: 1; }
 
         .rank-name {
-            color: #111827;
-            font-size: 15px;
+            color: #0f172a;
+            font-size: 17px;
             font-weight: 950;
             white-space: nowrap;
             overflow: hidden;
@@ -547,13 +440,13 @@ def inject_style():
         .rank-meta {
             color: #64748b;
             font-size: 11px;
-            font-weight: 800;
-            margin-top: 3px;
+            font-weight: 850;
+            margin-top: 4px;
         }
 
         .rank-point {
-            color: #0f172a;
-            font-size: 26px;
+            color: #020617;
+            font-size: 30px;
             font-weight: 950;
             flex: 0 0 auto;
             font-variant-numeric: tabular-nums;
@@ -568,192 +461,134 @@ def inject_style():
         .class-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
+            gap: 14px;
             margin: 0 0 14px 0;
         }
 
         .class-card {
-            border-radius: 22px;
-            padding: 16px;
-            background: rgba(255,255,255,.82);
-            border: 1px solid rgba(255,255,255,.9);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
-            backdrop-filter: blur(14px);
+            border-radius: 26px;
+            padding: 18px;
+            background: rgba(255,255,255,.78);
+            border: 1px solid rgba(255,255,255,.92);
+            box-shadow: 0 15px 38px rgba(15, 23, 42, .09);
+            backdrop-filter: blur(18px);
         }
 
         .class-name {
-            font-size: 15px;
+            font-size: 16px;
             color: #0f172a;
             font-weight: 950;
-            margin-bottom: 12px;
+            margin-bottom: 13px;
         }
 
         .class-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 7px 0;
+            padding: 9px 0;
             border-top: 1px solid #eef2f7;
             color: #475569;
             font-size: 13px;
-            font-weight: 850;
+            font-weight: 900;
         }
 
         .class-row b {
-            color: #0f172a;
-            font-size: 18px;
+            color: #020617;
+            font-size: 22px;
             font-variant-numeric: tabular-nums;
         }
 
+        div[data-testid="stDataFrame"] {
+            border-radius: 22px;
+            overflow: hidden;
+            border: 1px solid rgba(226,232,240,.95);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, .07);
+            background: rgba(255,255,255,.70);
+        }
+
+        div[data-testid="stDataFrame"] [role="columnheader"] {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+            font-weight: 950 !important;
+        }
+
+        div[data-baseweb="select"] > div {
+            border-radius: 18px;
+            border-color: #dbe3ef;
+            box-shadow: 0 9px 22px rgba(15, 23, 42, .065);
+            background-color: rgba(255,255,255,.92);
+        }
+
+        .stSelectbox label {
+            font-weight: 950 !important;
+            color: #334155 !important;
+        }
+
+        .stButton > button,
+        div[data-testid="stPageLink"] a {
+            border-radius: 999px !important;
+            font-weight: 950 !important;
+            border: 1px solid rgba(15, 23, 42, .10) !important;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, .08) !important;
+        }
+
+        .empty-card {
+            border-radius: 30px;
+            padding: 44px 26px;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, .16), transparent 35%),
+                linear-gradient(135deg, rgba(255,255,255,.92), rgba(248,250,252,.9));
+            border: 1px solid rgba(255,255,255,.92);
+            text-align: center;
+            box-shadow: 0 18px 46px rgba(15,23,42,.10);
+            backdrop-filter: blur(18px);
+        }
+
+        .empty-title {
+            font-size: 24px;
+            font-weight: 950;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .stDivider, hr { opacity: .45; }
+
         @media (max-width: 900px) {
-            /* スマホでもスコアボードは横並びを維持 */
-            .score-board {
-                grid-template-columns: minmax(0, 1fr) 74px minmax(0, 1fr);
-                gap: 8px;
-                align-items: stretch;
-            }
-
-            .score-card {
-                border-radius: 22px;
-                padding: 16px 10px 14px 10px;
-                min-height: 142px;
-            }
-
-            .score-card::after {
-                right: -54px;
-                bottom: -56px;
-                width: 126px;
-                height: 126px;
-            }
-
-            .score-team-label {
-                font-size: 9px;
-                padding: 4px 9px;
-                margin-bottom: 8px;
-                letter-spacing: .06em;
-            }
-
-            .score-team-name {
-                font-size: 14px;
-                margin-bottom: 8px;
-            }
-
-            .score-point {
-                font-size: 38px;
-            }
-
-            .score-unit {
-                font-size: 12px;
-            }
-
-            .score-vs {
-                min-height: 142px;
-                border-radius: 22px;
-                padding: 8px 5px;
-            }
-
-            .score-vs-main {
-                width: 48px;
-                height: 48px;
-                font-size: 18px;
-            }
-
-            .score-status {
-                font-size: 10px;
-                line-height: 1.25;
-                margin-top: 10px;
-            }
-
-            .insight-grid, .class-grid { grid-template-columns: 1fr; }
-            .rank-grid { grid-template-columns: 1fr; }
+            .score-board { grid-template-columns: minmax(0, 1fr) 74px minmax(0, 1fr); gap: 8px; }
+            .score-card { border-radius: 22px; padding: 16px 10px 14px 10px; min-height: 142px; }
+            .score-team-label { font-size: 9px; padding: 4px 9px; margin-bottom: 8px; }
+            .score-team-name { font-size: 14px; margin-bottom: 8px; }
+            .score-point { font-size: 38px; }
+            .score-unit { font-size: 12px; }
+            .score-vs { min-height: 142px; border-radius: 22px; padding: 8px 5px; }
+            .score-vs-main { width: 48px; height: 48px; border-radius: 17px; font-size: 18px; }
+            .score-status { font-size: 10px; line-height: 1.25; margin-top: 10px; }
+            .rank-grid, .class-grid { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 560px) {
-            .block-container {
-                padding-left: .65rem;
-                padding-right: .65rem;
-            }
-
-            .summary-hero {
-                padding: 20px 16px;
-                border-radius: 22px;
-            }
-
+            .block-container { padding-left: .65rem; padding-right: .65rem; }
+            .summary-hero { padding: 22px 17px; border-radius: 24px; }
             .summary-hero::after { display: none; }
-
-            .score-board {
-                grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
-                gap: 6px;
-                margin-top: 10px;
-            }
-
-            .score-card {
-                border-radius: 20px;
-                padding: 14px 7px 12px 7px;
-                min-height: 126px;
-            }
-
+            .score-board { grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr); gap: 6px; margin-top: 10px; }
+            .score-card { border-radius: 20px; padding: 14px 7px 12px 7px; min-height: 126px; }
             .score-card::before { height: 5px; }
-
-            .score-team-label {
-                font-size: 8px;
-                padding: 4px 8px;
-                margin-bottom: 7px;
-            }
-
-            .score-team-name {
-                font-size: 13px;
-            }
-
-            .score-point {
-                font-size: 34px;
-            }
-
-            .score-unit {
-                font-size: 11px;
-                margin-left: 1px;
-            }
-
-            .score-vs {
-                min-height: 126px;
-                border-radius: 20px;
-                padding: 6px 3px;
-            }
-
-            .score-vs-main {
-                width: 42px;
-                height: 42px;
-                font-size: 16px;
-            }
-
-            .score-status {
-                font-size: 9px;
-                margin-top: 8px;
-                word-break: keep-all;
-            }
-
-            .insight-grid, .class-grid { grid-template-columns: 1fr; gap: 9px; }
+            .score-team-label { font-size: 8px; padding: 4px 8px; margin-bottom: 7px; }
+            .score-team-name { font-size: 13px; }
+            .score-point { font-size: 34px; }
+            .score-unit { font-size: 11px; margin-left: 1px; }
+            .score-vs { min-height: 126px; border-radius: 20px; padding: 6px 3px; }
+            .score-vs-main { width: 42px; height: 42px; font-size: 16px; }
+            .score-status { font-size: 9px; margin-top: 8px; word-break: keep-all; }
+            .section-card { align-items: flex-start; }
+            .section-card::after { display: none; }
             .section-caption { margin-left: 0; }
-        }
-
-        @media (max-width: 390px) {
-            .score-board {
-                grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1fr);
-                gap: 5px;
-            }
-
-            .score-card {
-                min-height: 116px;
-                padding-left: 5px;
-                padding-right: 5px;
-            }
-
-            .score-team-label { font-size: 7px; padding: 3px 6px; }
-            .score-team-name { font-size: 12px; }
-            .score-point { font-size: 30px; }
-            .score-vs { min-height: 116px; }
-            .score-vs-main { width: 36px; height: 36px; font-size: 14px; }
-            .score-status { font-size: 8px; }
         }
         </style>
         """,
@@ -882,6 +717,10 @@ def attach_player_names(events_df, players_df):
     merged["名前"] = merged["名前"].fillna("")
     merged["ビブスType"] = merged["ビブスType"].fillna("")
 
+    # 選手DBに存在しない背番号は、集計上「未登録選手」として扱う
+    merged.loc[merged["名前"].astype(str).str.strip() == "", "名前"] = "未登録選手"
+    merged.loc[merged["ビブスType"].astype(str).str.strip() == "", "ビブスType"] = "不明"
+
     return merged
 
 
@@ -899,8 +738,8 @@ def calc_leader(red_total, blue_total):
     if red_total == blue_total:
         return "引き分け", ""
     if red_total > blue_total:
-        return "Redがリード中", "red"
-    return "Blueがリード中", "blue"
+        return "Redが勝利", "red"
+    return "Blueが勝利", "blue"
 
 
 def section_header(icon, title, caption):
@@ -1041,11 +880,10 @@ def score_column_config(df):
 
 
 def render_table(df, height=None):
-    """共通テーブル表示。height=Noneのときはheight引数を渡さない。"""
+    """共通テーブル表示。得点バーなどのグラフ表示は使わず、通常の表として表示する。"""
     kwargs = {
         "width": "stretch",
         "hide_index": True,
-        "column_config": score_column_config(df),
     }
     if height is not None:
         kwargs["height"] = height
@@ -1120,7 +958,6 @@ def render_class_cards(class_summary):
                 <div class="class-name">{escape_html(class_name)}</div>
                 <div class="class-row"><span>Red</span><b>{red}</b></div>
                 <div class="class-row"><span>Blue</span><b>{blue}</b></div>
-                <div class="class-row"><span>Total</span><b>{red + blue}</b></div>
             </div>
             """
         )
@@ -1142,9 +979,9 @@ inject_style()
 render_html(
     """
     <div class="summary-hero">
-        <div class="hero-kicker">🏀 SCORE SUMMARY</div>
-        <div class="hero-title">スコア集計</div>
-        <div class="hero-subtitle">チーム別・CLASS別・選手別の得点状況をまとめて確認できます。</div>
+        <div class="hero-kicker">🏀 LIVE SCORE DASHBOARD</div>
+        <div class="hero-title">Score Analytics</div>
+        <div class="hero-subtitle">チーム別・CLASS別・選手別の得点状況をスマートに確認できます。</div>
     </div>
     """,
 )
@@ -1183,7 +1020,8 @@ red_total = int(events_df.loc[events_df["TEAM"] == "Red", "得点"].sum())
 blue_total = int(events_df.loc[events_df["TEAM"] == "Blue", "得点"].sum())
 
 render_score_board(red_total, blue_total)
-render_team_share(red_total, blue_total)
+# グラフ表示は不要のため、得点シェアバーは表示しない
+# render_team_share(red_total, blue_total)
 
 
 # =========================
@@ -1230,7 +1068,6 @@ render_table(team_summary)
 # =========================
 section_header("🚀", "CLASS別・チーム別得点", "初級・中級・上級ごとの得点バランスを確認できます。")
 render_class_cards(class_summary)
-render_table(class_summary)
 
 
 # =========================

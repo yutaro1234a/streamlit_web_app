@@ -6,7 +6,6 @@ import sqlite3
 
 import pandas as pd
 import streamlit as st
-from st_click_detector import click_detector
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -15,17 +14,30 @@ from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from app_auth import require_login, render_userbox
-
+from st_click_detector import click_detector
 
 # =========================
 # ページ設定・認証
 # =========================
 st.set_page_config(page_title="スコアシート入力", page_icon="🏀", layout="wide")
-st.session_state["login_redirect_to"] = "main.py"
+
+st.markdown("""
+<style>
+[data-testid="stSidebarNav"] a[href*="_login"],
+[data-testid="stSidebarNav"] a[href*="%5Flogin"],
+[data-testid="stSidebarNav"] a[href*="login"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# st.session_state["login_redirect_to"] = "main.py"
+
 require_login()
+render_userbox()
+
 # render_userbox は他の共通処理・ページ側で呼ばれている場合に
 # DuplicateElementKey になるため、main.py では呼ばない。
-
 
 # =========================
 # 定数
@@ -322,6 +334,74 @@ def inject_global_style():
         button[aria-label="Close"] {
             display: none !important;
         }
+
+
+        /* ===== 表示範囲ラジオ専用：タブ風UI ===== */
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+            padding: 8px !important;
+            border-radius: 999px !important;
+            background: rgba(241, 245, 249, 0.95) !important;
+            border: 1px solid rgba(15, 23, 42, 0.08) !important;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label {
+            width: 100% !important;
+            min-height: 54px !important;
+            margin: 0 !important;
+            padding: 0 16px !important;
+            border-radius: 999px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            transition: all 0.25s ease !important;
+            color: #64748b !important;
+            font-weight: 900 !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label > div:first-child {
+            display: none !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label p {
+            margin: 0 !important;
+            font-size: 16px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.02em !important;
+            color: inherit !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label:has(input:checked) {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #ff8a00 0%, #ff3d6e 100%) !important;
+            box-shadow: 0 12px 24px rgba(255, 92, 80, 0.35) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label:hover {
+            transform: translateY(-1px) !important;
+        }
+
+        @media (max-width: 768px) {
+            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] {
+                gap: 6px !important;
+                padding: 6px !important;
+            }
+
+            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label {
+                min-height: 46px !important;
+                padding: 0 8px !important;
+            }
+
+            div[data-testid="stRadio"] div[role="radiogroup"][aria-label="表示範囲"] label p {
+                font-size: 13px !important;
+            }
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -351,9 +431,10 @@ def to_circle_number(num_str):
         "26": "㉖", "27": "㉗", "28": "㉘", "29": "㉙", "30": "㉚",
         "31": "㉛", "32": "㉜", "33": "㉝", "34": "㉞", "35": "㉟",
         "36": "㊱", "37": "㊲", "38": "㊳", "39": "㊴", "40": "㊵",
+        "41": "㊶", "42": "㊷", "43": "㊸", "44": "㊹", "45": "㊺",
+        "46": "㊻", "47": "㊼", "48": "㊽", "49": "㊾", "50": "㊿",
     }
     return circle_map.get(str(num_str).strip(), str(num_str).strip())
-
 
 def remove_cell_query_param():
     try:
@@ -462,21 +543,16 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".input-cell { background: linear-gradient(135deg, #f8fafc, #e2e8f0); cursor: pointer; font-weight: 950; font-size: 18px; transition: transform .14s ease, box-shadow .14s ease, filter .14s ease; }"
     html += ".input-cell:hover { transform: scale(1.045); filter: brightness(1.02); box-shadow: inset 0 0 0 2px rgba(249,115,22,.62); }"
     html += ".input-cell a { display: block; width: 100%; height: 100%; color: inherit; text-decoration: none; line-height: 32px; }"
-    html += ".input-cell a.longpress-ready { -webkit-touch-callout: none; user-select: none; touch-action: pan-y; }"
-    html += ".input-cell.longpress-pressing { transform: scale(.96); filter: brightness(.98); box-shadow: inset 0 0 0 3px rgba(249,115,22,.85); }"
-    html += ".longpress-hint { display: none; text-align: center; margin: 8px 0 10px; color: #9a3412; font-weight: 900; font-size: 12px; }"
     html += ".selected-cell { background: linear-gradient(135deg, #fed7aa, #fb923c) !important; outline: 3px solid #ea580c; outline-offset: -3px; }"
-    html += ".cell-one { background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important; }"
-    html += ".cell-two { background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important; }"
-    html += ".cell-three { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }"
     html += ".score-no { background: #ffffff; color: #334155; font-size: 12px; font-weight: 850; position: relative; }"
     html += ".score-mark { position: absolute; top: -0px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 950; color: #0f172a; pointer-events: none; }"
     html += ".class-beginner { color: #dc2626 !important; }"
     html += ".class-intermediate { color: #2563eb !important; }"
-    html += ".class-advanced { color: #111827 !important; }"
+    html += ".class-advanced { color: #16a34a !important; }"
+    
     html += "@media (max-width: 768px) {"
-    html += ".score-wrap { overflow-x: hidden; padding: 12px; border-radius: 22px; }"
-    html += ".score-block-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }"
+    html += ".score-wrap { overflow-x: hidden; padding: 12px 12px 12px 54px; border-radius: 22px; }"
+    html += ".score-block-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }"
     html += ".score-block-table { width: calc(50% - 6px); font-size: 11px; border-radius: 15px; }"
     html += ".score-block-table th, .score-block-table td { width: 34px; height: 26px; }"
     html += ".input-cell { font-size: 14px; }"
@@ -484,7 +560,6 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
     html += ".score-no { font-size: 10px; }"
     html += ".score-mark { top: 0px; font-size: 17px; }"
     html += ".score-title-main { font-size: 12px; padding: 9px; }"
-    html += ".longpress-hint { display: block; }"
     html += "}"
     html += "</style>"
 
@@ -492,12 +567,6 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
         classes = ["input-cell"]
         if key == selected_cell:
             classes.append("selected-cell")
-        if mark == "1点":
-            classes.append("cell-one")
-        elif mark == "2点":
-            classes.append("cell-two")
-        elif mark == "3点":
-            classes.append("cell-three")
         return " ".join(classes)
 
     def class_color_class(class_type):
@@ -507,11 +576,9 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
             return "class-intermediate"
         elif class_type == "上級":
             return "class-advanced"
-        return ""
 
     html += '<div class="score-wrap">'
     html += '<div class="score-title-main">ランニングスコア　RUNNING SCORE</div>'
-    html += '<div class="longpress-hint">📱 スマホではセルを長押しすると入力できます</div>'
     html += '<div class="score-block-row">'
 
     for block in range(start_block, end_block):
@@ -555,7 +622,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
             html += "<tr>"
             html += (
                 f'<td class="{a_class} {a_color_class}">'
-                f'<a href="#" id="{a_key}" class="longpress-ready">{html_lib.escape(str(a_text))}</a>'
+                f'<a href="#" id="{a_key}">{html_lib.escape(str(a_text))}</a>'
                 f"</td>"
             )
             html += (
@@ -568,7 +635,7 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
             )
             html += (
                 f'<td class="{b_class} {b_color_class}">'
-                f'<a href="#" id="{b_key}" class="longpress-ready">{html_lib.escape(str(b_text))}</a>'
+                f'<a href="#" id="{b_key}">{html_lib.escape(str(b_text))}</a>'
                 f"</td>"
             )
             html += "</tr>"
@@ -577,110 +644,6 @@ def make_running_score_html(selected_cell="", start_block=0, end_block=4):
 
     html += "</div>"
     html += "</div>"
-
-    html += """
-    <script>
-    (function() {
-        const LONG_PRESS_MS = 550;
-        let timer = null;
-        let startX = 0;
-        let startY = 0;
-        let activeLink = null;
-        let longPressFired = false;
-
-        function isTouchDevice() {
-            return window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-        }
-
-        function clearPressState() {
-            if (timer) {
-                clearTimeout(timer);
-                timer = null;
-            }
-            if (activeLink) {
-                const td = activeLink.closest(".input-cell");
-                if (td) td.classList.remove("longpress-pressing");
-            }
-            activeLink = null;
-        }
-
-        document.addEventListener("contextmenu", function(e) {
-            const link = e.target.closest("a.longpress-ready");
-            if (link && isTouchDevice()) {
-                e.preventDefault();
-            }
-        }, true);
-
-        document.addEventListener("touchstart", function(e) {
-            const link = e.target.closest("a.longpress-ready");
-            if (!link) return;
-
-            longPressFired = false;
-            activeLink = link;
-
-            const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-
-            const td = link.closest(".input-cell");
-            if (td) td.classList.add("longpress-pressing");
-
-            timer = setTimeout(function() {
-                longPressFired = true;
-                link.dataset.longpressAllowed = "1";
-
-                const clickEvent = new MouseEvent("click", {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                });
-                link.dispatchEvent(clickEvent);
-
-                setTimeout(function() {
-                    delete link.dataset.longpressAllowed;
-                }, 0);
-
-                clearPressState();
-            }, LONG_PRESS_MS);
-        }, { passive: true });
-
-        document.addEventListener("touchmove", function(e) {
-            if (!activeLink) return;
-            const touch = e.touches[0];
-            const movedX = Math.abs(touch.clientX - startX);
-            const movedY = Math.abs(touch.clientY - startY);
-
-            if (movedX > 8 || movedY > 8) {
-                clearPressState();
-            }
-        }, { passive: true });
-
-        document.addEventListener("touchend", function(e) {
-            const link = e.target.closest("a.longpress-ready");
-            const shouldBlockTap = link && isTouchDevice() && !longPressFired;
-
-            clearPressState();
-
-            if (shouldBlockTap) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-            }
-        }, true);
-
-        document.addEventListener("click", function(e) {
-            const link = e.target.closest("a.longpress-ready");
-            if (!link || !isTouchDevice()) return;
-
-            if (link.dataset.longpressAllowed !== "1") {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-            }
-        }, true);
-    })();
-    </script>
-    """
 
     return html
 
@@ -732,35 +695,54 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
             return colors.red
         if class_type == "中級":
             return colors.blue
+        if class_type == "上級":
+            return colors.green
         return colors.black
 
     def draw_score_mark(cx, cy, mark):
         c.setStrokeColor(colors.black)
         c.setFillColor(colors.black)
         if mark == "1点":
-            c.circle(cx, cy, 1.7, stroke=0, fill=1)
+            # ●を大きく
+            c.circle(cx, cy - 1.0, 2.4, stroke=0, fill=1)   # ← 下にずらす
         elif mark in ("2点", "3点"):
-            c.setLineWidth(0.9)
-            c.line(cx - 3.2, cy - 2.8, cx + 3.2, cy + 3.8)
+            # ／を太く＆長く
+            c.setLineWidth(1.3)
+            c.line(cx - 3.2, cy - 4.0, cx + 3.2, cy + 2.6)  # ← 全体を下へ
 
     def draw_player_number(cx, cy, number, mark, class_type):
         number = "" if number is None else str(number).strip()
         if not number:
             return
+
+        color = player_color(class_type)
+
         if mark == "3点":
-            c.setStrokeColor(colors.black)
+            # 状態を保存
+            c.saveState()
+
+            # 円（枠）を色付きに
+            c.setStrokeColor(color)
             c.setLineWidth(0.7)
             c.circle(cx, cy + 0.5, 4.5, stroke=1, fill=0)
-            draw_text_center(cx, cy - 1.7, number, size=5.0, color=colors.black)
+
+            # 数字も色付き
+            draw_text_center(cx, cy - 1.7, number, size=5.0, color=color)
+
+            # 状態を元に戻す（←これが超重要）
+            c.restoreState()
+
         else:
-            draw_text_center(cx, cy - 2.0, number, size=6.0, color=player_color(class_type))
+            # 1点・2点は数字だけ色
+            draw_text_center(cx, cy - 2.0, number, size=6.0, color=color)
 
     c.setFillColor(colors.white)
-    c.rect(58, page_h - 24, 160, 12, stroke=0, fill=1)
-    c.rect(360, page_h - 24, 160, 12, stroke=0, fill=1)
-    draw_text_left(60, page_h - 22, team_a_name, 7)
-    draw_text_left(362, page_h - 22, team_b_name, 7)
-
+    c.rect(58, page_h - 20, 160, 12, stroke=0, fill=1)
+    c.rect(360, page_h - 20, 160, 12, stroke=0, fill=1)
+    
+    draw_text_left(80, page_h - 18, team_a_name, 7)   # チーム名← +20
+    draw_text_left(382, page_h - 18, team_b_name, 7)  # チーム名← +20
+ 
     RUNNING_SCORE_LAYOUT = {
         "erase_x": 0,
         "erase_y": 0,
@@ -858,15 +840,130 @@ def create_score_sheet_pdf(team_a_name, team_b_name):
 def score_dialog(cell_key: str):
     data = st.session_state.scores[cell_key]
     team, score_no = cell_key.split("_")
+    score_no_int = int(score_no)
 
-    st.markdown(f"### 🏀 スコア入力")
-    st.caption(f"対象：{team} / スコア番号 {score_no}")
+    # 選手番号入力欄のキー。
+    # CLASSを選び直しても消えないように、CLASS名をキーに含めない。
+    number_key = f"player_number_input_{cell_key}"
+    reset_number_key = f"reset_number_input_{cell_key}"
+
+    # クリア後に同じセルを開いた場合、前回の入力欄の値が残らないようにする。
+    # text_input生成前ならsession_stateの削除は安全。
+    if st.session_state.pop(reset_number_key, False):
+        st.session_state.pop(number_key, None)
+
+    if number_key not in st.session_state:
+        st.session_state[number_key] = str(data.get("number", "")).strip()
+
+    # ダイアログ内だけの見た目調整
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] {
+            gap: 0.65rem;
+        }
+
+        div[data-testid="stDialog"] div[data-testid="stRadio"] label p,
+        div[data-testid="stDialog"] div[data-testid="stTextInput"] label p {
+            font-size: 15px !important;
+            font-weight: 950 !important;
+            color: #0f172a !important;
+            letter-spacing: .01em !important;
+        }
+
+        div[data-testid="stDialog"] div[data-testid="stTextInput"] input {
+            min-height: 54px !important;
+            border-radius: 18px !important;
+            border: 2px solid rgba(249,115,22,.24) !important;
+            background: linear-gradient(135deg,#ffffff,#fff7ed) !important;
+            box-shadow: 0 12px 24px rgba(249,115,22,.10) !important;
+            font-size: 26px !important;
+            font-weight: 950 !important;
+            text-align: center !important;
+            color: #0f172a !important;
+        }
+
+        div[data-testid="stDialog"] div[data-testid="stTextInput"] input:focus {
+            border-color: #f97316 !important;
+            box-shadow: 0 0 0 4px rgba(249,115,22,.14), 0 14px 28px rgba(249,115,22,.14) !important;
+        }
+
+        div[data-testid="stDialog"] div[role="radiogroup"] label {
+            border-radius: 999px !important;
+            padding: 7px 12px !important;
+            background: rgba(248,250,252,.88) !important;
+            border: 1px solid rgba(15,23,42,.08) !important;
+            box-shadow: 0 8px 18px rgba(15,23,42,.05) !important;
+        }
+
+        div[data-testid="stDialog"] div[role="radiogroup"] label:has(input:checked) {
+            background: linear-gradient(135deg,#ffedd5,#fed7aa) !important;
+            border-color: rgba(249,115,22,.42) !important;
+            box-shadow: 0 10px 22px rgba(249,115,22,.16) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # 入力対象ヘッダー + 閉じるボタン
+    header_col, close_col = st.columns([9, 1])
+    with header_col:
+        st.markdown(
+            f"""
+            <div style="
+                position:relative;
+                overflow:hidden;
+                margin:0 0 14px 0;
+                padding:16px 18px;
+                border-radius:24px;
+                background:
+                    radial-gradient(circle at 12% 18%, rgba(255,255,255,.92), transparent 7rem),
+                    linear-gradient(135deg, #fb923c 0%, #f97316 46%, #ea580c 100%);
+                box-shadow:0 18px 34px rgba(234,88,12,.28), 0 8px 18px rgba(15,23,42,.10);
+                color:white;
+            ">
+                <div style="
+                    position:absolute;
+                    right:-18px;
+                    top:-26px;
+                    font-size:86px;
+                    opacity:.18;
+                    transform:rotate(-14deg);
+                ">🏀</div>
+                <div style="
+                    position:relative;
+                    font-size:12px;
+                    font-weight:950;
+                    letter-spacing:.14em;
+                    opacity:.92;
+                    margin-bottom:5px;
+                ">
+                    SCORE ENTRY
+                </div>
+                <div style="
+                    position:relative;
+                    font-size:24px;
+                    font-weight:1000;
+                    line-height:1.2;
+                    letter-spacing:-.03em;
+                ">
+                    入力対象：{team}　スコア{score_no_int}点目
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with close_col:
+        if st.button("✕", width="stretch", key=f"dialog_close_{cell_key}"):
+            close_score_dialog()
+            st.rerun()
 
     mark_options = ["2点", "3点", "1点"]
     default_mark = data["mark"] if data["mark"] else "2点"
 
     mark = st.radio(
-        "得点種別",
+        "🔥 得点種別",
         mark_options,
         index=mark_options.index(default_mark),
         horizontal=True,
@@ -879,48 +976,33 @@ def score_dialog(cell_key: str):
         default_class = "初級"
 
     player_class = st.radio(
-        "CLASS",
+        "🎽 CLASS",
         CLASS_OPTIONS,
         index=CLASS_OPTIONS.index(default_class),
         horizontal=True,
         key=f"class_radio_{cell_key}",
     )
 
-    players_df = fetch_players()
-    team_name_for_filter = "Red" if team == "A" else "Blue"
-    filtered_players = players_df[players_df["team"] == team_name_for_filter].copy()
-    filtered_players = filtered_players[filtered_players["class_type"] == player_class].copy()
+    number = st.text_input(
+        "🔢 選手番号",
+        key=number_key,
+    ).strip()
 
-    player_options = []
-    player_numbers = []
-    for _, row in filtered_players.iterrows():
-        num = str(row["uniform_number"]).strip()
-        label = f"{num} - {row['player_name']}"
-        player_options.append(label)
-        player_numbers.append(num)
-
-    number = ""
-    if player_options:
-        current_number = str(data.get("number", "")).strip()
-        default_index = player_numbers.index(current_number) if current_number in player_numbers else 0
-        selected_player = st.selectbox(
-            "選手選択",
-            player_options,
-            index=default_index,
-            key=f"player_select_{cell_key}_{player_class}",
-        )
-        number = selected_player.split(" - ")[0]
-    else:
-        st.warning("該当する選手が登録されていません。")
+    number_is_valid = number == "" or number.isdigit()
+    if not number_is_valid:
+        st.error("選手番号は数字のみ入力してください。")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("保存", type="primary", width="stretch", key=f"save_{cell_key}"):
+        if st.button("💾 保存", type="primary", width="stretch", key=f"save_{cell_key}"):
+            if not number_is_valid:
+                st.stop()
+
             st.session_state.scores[cell_key] = {
                 "mark": mark,
                 "class": player_class,
-                "number": number.strip(),
+                "number": number,
             }
             st.session_state["last_selected_class"] = player_class
             save_scores()
@@ -929,20 +1011,19 @@ def score_dialog(cell_key: str):
             st.rerun()
 
     with col2:
-        if st.button("キャンセル", width="stretch", key=f"cancel_{cell_key}"):
+        if st.button("🧹 このセルをクリア", width="stretch", key=f"clear_{cell_key}"):
+            st.session_state.scores[cell_key] = {
+                "mark": "",
+                "class": "初級",
+                "number": "",
+            }
+            # text_inputのkeyを直接書き換えるとStreamlitAPIExceptionになるため、
+            # 次回ダイアログ生成前に削除するためのフラグだけ立てる。
+            st.session_state[reset_number_key] = True
+            save_scores()
+            st.session_state.selected_cell = cell_key
             close_score_dialog()
             st.rerun()
-
-    if st.button("このセルをクリア", width="stretch", key=f"clear_{cell_key}"):
-        st.session_state.scores[cell_key] = {
-            "mark": "",
-            "class": "初級",
-            "number": "",
-        }
-        save_scores()
-        st.session_state.selected_cell = cell_key
-        close_score_dialog()
-        st.rerun()
 
 
 # =========================
